@@ -23,7 +23,7 @@ class LoginPage extends StatelessWidget {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state.status == AuthStatus.authenticated) {
-            context.go(RouteNames.home);
+            context.go(RouteNames.feed);
           } else if (state.errorMessage != null) {
             context.showErrorSnackBar(state.errorMessage!);
           } else if (state.successMessage != null) {

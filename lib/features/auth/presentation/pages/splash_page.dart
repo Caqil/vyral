@@ -73,7 +73,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state.status == AuthStatus.authenticated) {
-          context.go(RouteNames.home);
+          context.go(RouteNames.feed);
         } else if (state.status == AuthStatus.unauthenticated) {
           context.go(RouteNames.login);
         }

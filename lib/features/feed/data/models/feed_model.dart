@@ -116,9 +116,9 @@ class PostModel extends PostEntity {
   @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
-  const PostModel({
-    required String id,
-    required String content,
+   PostModel({
+    required super.id,
+    required super.content,
     required this.postContentType,
     required this.postType,
     required this.postVisibility,
@@ -127,8 +127,8 @@ class PostModel extends PostEntity {
     required this.postStats,
     required this.postHashtags,
     required this.postMentions,
-    String? location,
-    String? language,
+    super.location,
+    super.language,
     required this.commentsEnabled,
     required this.likesEnabled,
     required this.sharesEnabled,
@@ -143,8 +143,6 @@ class PostModel extends PostEntity {
     required this.createdAt,
     required this.updatedAt,
   }) : super(
-          id: id,
-          content: content,
           contentType: _parseContentType(postContentType),
           type: _parsePostType(postType),
           visibility: _parseVisibility(postVisibility),
@@ -153,8 +151,6 @@ class PostModel extends PostEntity {
           stats: postStats,
           hashtags: postHashtags,
           mentions: postMentions,
-          location: location,
-          language: language,
           commentsEnabled: commentsEnabled,
           likesEnabled: likesEnabled,
           sharesEnabled: sharesEnabled,

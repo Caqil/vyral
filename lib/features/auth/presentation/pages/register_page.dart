@@ -24,7 +24,7 @@ class RegisterPage extends StatelessWidget {
         listener: (context, state) {
           if (state.status == AuthStatus.authenticated) {
             context.showSuccessSnackBar('Account created successfully!');
-            context.go(RouteNames.home);
+            context.go(RouteNames.feed);
           } else if (state.errorMessage != null) {
             context.showErrorSnackBar(state.errorMessage!);
           }
