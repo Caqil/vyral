@@ -15,7 +15,6 @@ class SocialLoginButtons extends StatelessWidget {
         CustomButton(
           text: 'Continue with Google',
           onPressed: () {
-            // TODO: Implement Google login
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Google login coming soon!'),
@@ -49,24 +48,6 @@ class SocialLoginButtons extends StatelessWidget {
           ),
           const SizedBox(height: 12),
         ],
-
-        // Facebook Login
-        CustomButton(
-          text: 'Continue with Facebook',
-          onPressed: () {
-            // TODO: Implement Facebook login
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Facebook login coming soon!'),
-              ),
-            );
-          },
-          type: ButtonType.outline,
-          isFullWidth: true,
-          icon: Icons.facebook_rounded,
-          backgroundColor: const Color(0xFF1877F2),
-          textColor: Colors.white,
-        ),
       ],
     );
   }

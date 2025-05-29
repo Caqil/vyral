@@ -1,3 +1,4 @@
+// lib/features/auth/data/models/auth_response_model.dart
 import 'package:json_annotation/json_annotation.dart';
 import '../../domain/entities/auth_entity.dart';
 import 'user_model.dart';
@@ -36,32 +37,36 @@ class AuthResponseModel extends AuthEntity {
 
   factory AuthResponseModel.fromJson(Map<String, dynamic> json) {
     try {
-      // Handle different possible response formats
-      final accessToken = json['access_token']?.toString() ??
-          json['accessToken']?.toString() ??
-          json['token']?.toString();
+      // The JSON structure is: { "tokens": {...}, "user": {...} }
+      // This is the extracted 'data' portion from the API response
 
-      final refreshToken =
-          json['refresh_token']?.toString() ?? json['refreshToken']?.toString();
-
-      if (accessToken == null || refreshToken == null) {
-        throw Exception('Missing required tokens in response');
+      if (!json.containsKey('tokens') || !json.containsKey('user')) {
+        throw Exception('Missing tokens or user in response');
       }
 
-      // Parse user data
-      final userData = json['user'] as Map<String, dynamic>?;
-      if (userData == null) {
-        throw Exception('Missing user data in response');
+      final tokensData = json['tokens'] as Map<String, dynamic>;
+      final userData = json['user'] as Map<String, dynamic>;
+
+      // Extract tokens
+      final accessToken = tokensData['access_token']?.toString();
+      final refreshToken = tokensData['refresh_token']?.toString();
+
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception('Missing or empty access_token in response');
+      }
+      if (refreshToken == null || refreshToken.isEmpty) {
+        throw Exception('Missing or empty refresh_token in response');
       }
 
-      // Parse expiration date
+      // Calculate expiration date
       DateTime expiresAt;
-      if (json['expires_at'] != null) {
-        expiresAt = DateTime.parse(json['expires_at'].toString());
-      } else if (json['expiresAt'] != null) {
-        expiresAt = DateTime.parse(json['expiresAt'].toString());
+      if (tokensData['expires_in'] != null) {
+        final expiresIn = tokensData['expires_in'] as int; // in seconds
+        expiresAt = DateTime.now().add(Duration(seconds: expiresIn));
+      } else if (tokensData['expires_at'] != null) {
+        expiresAt = DateTime.parse(tokensData['expires_at'].toString());
       } else {
-        // Default to 1 hour from now if not provided
+        // Default to 1 hour from now
         expiresAt = DateTime.now().add(const Duration(hours: 1));
       }
 
@@ -70,11 +75,9 @@ class AuthResponseModel extends AuthEntity {
         refreshToken: refreshToken,
         user: UserModel.fromJson(userData),
         expiresAt: expiresAt,
-        tokenType: json['token_type']?.toString() ??
-            json['tokenType']?.toString() ??
-            'Bearer',
+        tokenType: tokensData['token_type']?.toString() ?? 'Bearer',
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       throw Exception('Failed to parse auth response: $e');
     }
   }

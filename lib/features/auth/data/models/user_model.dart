@@ -1,3 +1,4 @@
+// lib/features/auth/data/models/user_model.dart
 import 'package:json_annotation/json_annotation.dart';
 import '../../domain/entities/user_entity.dart';
 
@@ -71,8 +72,43 @@ class UserModel extends UserEntity {
           updatedAt: createdAt, // Using created_at as fallback
         );
 
-  factory UserModel.fromJson(Map<String, dynamic> json) =>
-      _$UserModelFromJson(json);
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    try {
+      return UserModel(
+        id: json['id']?.toString() ?? '',
+        username: json['username']?.toString() ?? '',
+        email: json['email']?.toString() ?? '',
+        firstName: json['first_name']?.toString(),
+        lastName: json['last_name']?.toString(),
+        displayName: json['display_name']?.toString(),
+        bio: json['bio']?.toString(),
+        profilePic: json['profile_pic']?.toString(),
+        coverPic: json['cover_pic']?.toString(),
+        website: json['website']?.toString(),
+        location: json['location']?.toString(),
+        dateOfBirth: json['date_of_birth'] != null
+            ? DateTime.tryParse(json['date_of_birth'].toString())
+            : null,
+        gender: json['gender']?.toString(),
+        phone: json['phone']?.toString(),
+        socialLinks: json['social_links'] != null
+            ? Map<String, String>.from(json['social_links'])
+            : null,
+        isVerified: json['is_verified'] == true,
+        isPrivate: json['is_private'] == true,
+        followersCount: (json['followers_count'] as num?)?.toInt() ?? 0,
+        followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
+        postsCount: (json['posts_count'] as num?)?.toInt() ?? 0,
+        friendsCount: (json['friends_count'] as num?)?.toInt() ?? 0,
+        isPremium: json['is_premium'] == true,
+        createdAt: json['created_at'] != null
+            ? DateTime.parse(json['created_at'].toString())
+            : DateTime.now(),
+      );
+    } catch (e) {
+      throw Exception('Failed to parse user data: $e');
+    }
+  }
 
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
