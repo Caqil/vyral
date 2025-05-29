@@ -1,9 +1,13 @@
 // lib/core/constants/api_constants.dart
 
 class ApiConstants {
-  // Base URL - Change this to your actual server URL
-  static const String baseUrl =
-      'https://7d94-2001-448a-10b0-5eb1-980-cf00-fbb1-71c5.ngrok-free.app/api/v1';
+  // Base URL - Update this to your actual server URL
+  // For local development:
+  static const String baseUrl = 'http://localhost:8080/api/v1';
+
+  // For production or ngrok (update with your actual URL):
+  // static const String baseUrl = 'https://your-ngrok-url.ngrok-free.app/api/v1';
+  // static const String baseUrl = 'https://your-production-domain.com/api/v1';
 
   // Timeout settings
   static const int connectTimeout = 30000; // 30 seconds
@@ -48,6 +52,8 @@ class ApiConstants {
   static const String userPosts = '/posts/user/{id}';
   static const String feedPosts = '/posts/feed';
   static const String likePost = '/posts/{id}/like';
+  static const String bookmarkPost = '/posts/{id}/bookmark';
+  static const String sharePost = '/posts/{id}/share';
   static const String reportPost = '/posts/{id}/report';
   static const String postLikes = '/posts/{id}/likes';
   static const String postStats = '/posts/{id}/stats';
@@ -206,10 +212,59 @@ class ApiConstants {
   static const String contentPreferences = '/behavior/preferences';
   static const String similarUsers = '/behavior/similar-users';
 
-  // Health check endpoints
-  static const String health = '/health';
-  static const String healthDeep = '/health/deep';
-  static const String apiInfo = '/';
-  static const String systemStatus = '/status';
-  static const String apiVersion = '/version';
+  // Helper methods for URL building
+  static String buildUrl(String endpoint, {Map<String, String>? pathParams}) {
+    String url = endpoint;
+
+    if (pathParams != null) {
+      pathParams.forEach((key, value) {
+        url = url.replaceAll('{$key}', value);
+      });
+    }
+
+    return url;
+  }
+
+  // Common path parameter replacements
+  static String replaceUserId(String endpoint, String userId) {
+    return endpoint.replaceAll('{id}', userId);
+  }
+
+  static String replacePostId(String endpoint, String postId) {
+    return endpoint.replaceAll('{id}', postId);
+  }
+
+  static String replaceCommentId(String endpoint, String commentId) {
+    return endpoint.replaceAll('{id}', commentId);
+  }
+
+  static String replaceGroupId(String endpoint, String groupId) {
+    return endpoint.replaceAll('{id}', groupId);
+  }
+
+  static String replaceConversationId(String endpoint, String conversationId) {
+    return endpoint.replaceAll('{id}', conversationId);
+  }
+
+  static String replaceStoryId(String endpoint, String storyId) {
+    return endpoint.replaceAll('{id}', storyId);
+  }
+
+  static String replaceMediaId(String endpoint, String mediaId) {
+    return endpoint.replaceAll('{id}', mediaId);
+  }
+
+  static String replaceReportId(String endpoint, String reportId) {
+    return endpoint.replaceAll('{id}', reportId);
+  }
+
+  // Build URL with multiple path parameters
+  static String buildUrlWithParams(
+      String endpoint, Map<String, String> params) {
+    String url = endpoint;
+    params.forEach((key, value) {
+      url = url.replaceAll('{$key}', value);
+    });
+    return url;
+  }
 }

@@ -9,7 +9,6 @@ import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/verify_email_page.dart';
-import '../../features/feed/presentation/pages/feed_page.dart';
 import '../../shared/widgets/bottom_navigation.dart';
 import 'route_names.dart';
 
@@ -80,18 +79,11 @@ class AppRouter {
             path: RouteNames.home, // '/'
             name: 'home',
             builder: (context, state) {
-              print('Building home route: ${state.uri}'); // Debug
-              return const FeedPage();
-            },
-          ),
-
-          // Feed route (same as home for now)
-          GoRoute(
-            path: RouteNames.feed, // '/feed'
-            name: 'feed',
-            builder: (context, state) {
-              print('Building feed route: ${state.uri}'); // Debug
-              return const FeedPage();
+              return const Scaffold(
+                body: Center(
+                  child: Text('Search Page - Coming Soon'),
+                ),
+              );
             },
           ),
 
