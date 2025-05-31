@@ -34,12 +34,12 @@ class _LoginFormState extends State<LoginForm> {
   void _handleSubmit() {
     if (_formKey.currentState?.validate() == true) {
       context.read<AuthBloc>().add(
-        AuthLoginRequested(
-          emailOrUsername: _emailController.text.trim(),
-          password: _passwordController.text,
-          rememberMe: _rememberMe,
-        ),
-      );
+            AuthLoginRequested(
+              emailOrUsername: _emailController.text.trim(),
+              password: _passwordController.text,
+              rememberMe: _rememberMe,
+            ),
+          );
     }
   }
 
@@ -57,10 +57,10 @@ class _LoginFormState extends State<LoginForm> {
           CustomTextField(
             controller: _emailController,
             label: 'Email or Username',
-            hint: 'Enter your email or username',
+            placeholder: Text('Enter your email or username'),
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(Icons.person_outline),
+            prefix: const Icon(Icons.person_outline),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Email or username is required';
@@ -68,23 +68,23 @@ class _LoginFormState extends State<LoginForm> {
               return null;
             },
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Password field
           CustomTextField(
             controller: _passwordController,
             label: 'Password',
-            hint: 'Enter your password',
+            placeholder: Text('Enter your password'),
             obscureText: true,
             textInputAction: TextInputAction.done,
-            prefixIcon: const Icon(Icons.lock_outline),
+            prefix: const Icon(Icons.lock_outline),
             validator: Validators.validateRequired,
             onSubmitted: (_) => _handleSubmit(),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Remember me and Forgot password
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -93,7 +93,8 @@ class _LoginFormState extends State<LoginForm> {
                 children: [
                   Checkbox(
                     value: _rememberMe,
-                    onChanged: (value) => setState(() => _rememberMe = value ?? false),
+                    onChanged: (value) =>
+                        setState(() => _rememberMe = value ?? false),
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     visualDensity: VisualDensity.compact,
                   ),
@@ -115,9 +116,9 @@ class _LoginFormState extends State<LoginForm> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // Login button
           BlocBuilder<AuthBloc, AuthState>(
             builder: (context, state) {
@@ -130,9 +131,9 @@ class _LoginFormState extends State<LoginForm> {
               );
             },
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Divider
           Row(
             children: [
@@ -153,9 +154,9 @@ class _LoginFormState extends State<LoginForm> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Social login buttons
           const SocialLoginButtons(),
         ],
@@ -163,4 +164,3 @@ class _LoginFormState extends State<LoginForm> {
     );
   }
 }
-

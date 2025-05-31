@@ -37,7 +37,7 @@ class _PasswordFieldState extends State<PasswordField> {
     return CustomTextField(
       controller: widget.controller,
       label: widget.label,
-      hint: widget.hint,
+      placeholder: Text(widget.hint ?? ""),
       obscureText: _obscureText,
       validator: widget.validator,
       onChanged: widget.onChanged,
@@ -45,8 +45,8 @@ class _PasswordFieldState extends State<PasswordField> {
       textInputAction: widget.textInputAction,
       autofocus: widget.autofocus,
       focusNode: widget.focusNode,
-      prefixIcon: const Icon(Icons.lock_outline),
-      suffixIcon: IconButton(
+      prefix: const Icon(Icons.lock_outline),
+      suffix: IconButton(
         icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
         onPressed: () => setState(() => _obscureText = !_obscureText),
       ),

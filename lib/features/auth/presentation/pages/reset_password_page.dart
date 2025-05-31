@@ -115,9 +115,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   CustomTextField(
                     controller: _passwordController,
                     label: 'New Password',
-                    hint: 'Enter new password',
+                    placeholder: Text('Enter new password'),
                     obscureText: true,
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    prefix: const Icon(Icons.lock_outline),
                     validator: Validators.validatePassword,
                     textInputAction: TextInputAction.next,
                   ),
@@ -128,9 +128,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   CustomTextField(
                     controller: _confirmPasswordController,
                     label: 'Confirm Password',
-                    hint: 'Confirm new password',
+                    placeholder: Text('Confirm new password'),
                     obscureText: true,
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    prefix: const Icon(Icons.lock_outline),
                     validator: (value) => Validators.validateConfirmPassword(
                       _passwordController.text,
                       value,

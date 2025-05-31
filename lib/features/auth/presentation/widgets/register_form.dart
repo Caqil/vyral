@@ -109,9 +109,9 @@ class _RegisterFormState extends State<RegisterForm> {
                 child: CustomTextField(
                   controller: _firstNameController,
                   label: 'First Name',
-                  hint: 'Enter first name',
+                  placeholder: Text('Enter first name'),
                   textInputAction: TextInputAction.next,
-                  prefixIcon: const Icon(Icons.person_outline),
+                  prefix: const Icon(Icons.person_outline),
                   validator: (value) =>
                       Validators.validateName(value, fieldName: 'First name'),
                 ),
@@ -121,9 +121,9 @@ class _RegisterFormState extends State<RegisterForm> {
                 child: CustomTextField(
                   controller: _lastNameController,
                   label: 'Last Name',
-                  hint: 'Enter last name',
+                  placeholder: Text('Enter last name'),
                   textInputAction: TextInputAction.next,
-                  prefixIcon: const Icon(Icons.person_outline),
+                  prefix: const Icon(Icons.person_outline),
                   validator: (value) =>
                       Validators.validateName(value, fieldName: 'Last name'),
                 ),
@@ -137,9 +137,9 @@ class _RegisterFormState extends State<RegisterForm> {
           CustomTextField(
             controller: _usernameController,
             label: 'Username',
-            hint: 'Choose a unique username',
+            placeholder: Text('Choose a unique username'),
             textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(Icons.alternate_email),
+            prefix: const Icon(Icons.alternate_email),
             validator: Validators.validateUsername,
           ),
 
@@ -149,10 +149,10 @@ class _RegisterFormState extends State<RegisterForm> {
           CustomTextField(
             controller: _emailController,
             label: 'Email Address',
-            hint: 'Enter your email',
+            placeholder: Text('Enter your email'),
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(Icons.email_outlined),
+            prefix: const Icon(Icons.email_outlined),
             validator: Validators.validateEmail,
           ),
 
@@ -162,10 +162,10 @@ class _RegisterFormState extends State<RegisterForm> {
           CustomTextField(
             controller: _passwordController,
             label: 'Password',
-            hint: 'Create a strong password',
+            placeholder: Text('Create a strong password'),
             obscureText: true,
             textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(Icons.lock_outline),
+            prefix: const Icon(Icons.lock_outline),
             validator: Validators.validatePassword,
           ),
 
@@ -175,10 +175,10 @@ class _RegisterFormState extends State<RegisterForm> {
           CustomTextField(
             controller: _confirmPasswordController,
             label: 'Confirm Password',
-            hint: 'Confirm your password',
+            placeholder: Text('Confirm your password'),
             obscureText: true,
             textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(Icons.lock_outline),
+            prefix: const Icon(Icons.lock_outline),
             validator: (value) => Validators.validateConfirmPassword(
               _passwordController.text,
               value,
@@ -191,10 +191,10 @@ class _RegisterFormState extends State<RegisterForm> {
           CustomTextField(
             controller: _phoneController,
             label: 'Phone Number (Optional)',
-            hint: 'Enter your phone number',
+            placeholder: Text('Enter your phone number'),
             keyboardType: TextInputType.phone,
             textInputAction: TextInputAction.next,
-            prefixIcon: const Icon(Icons.phone_outlined),
+            prefix: const Icon(Icons.phone_outlined),
             validator: Validators.validatePhone,
           ),
 
@@ -207,7 +207,7 @@ class _RegisterFormState extends State<RegisterForm> {
               decoration: InputDecoration(
                 labelText: 'Date of Birth (Optional)',
                 hintText: 'Select your date of birth',
-                prefixIcon: const Icon(Icons.calendar_today_outlined),
+                prefix: const Icon(Icons.calendar_today_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -230,7 +230,7 @@ class _RegisterFormState extends State<RegisterForm> {
             value: _selectedGender,
             decoration: InputDecoration(
               labelText: 'Gender (Optional)',
-              prefixIcon: const Icon(Icons.person_outline),
+              prefix: const Icon(Icons.person_outline),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -251,10 +251,10 @@ class _RegisterFormState extends State<RegisterForm> {
           CustomTextField(
             controller: _bioController,
             label: 'Bio (Optional)',
-            hint: 'Tell us about yourself',
+            placeholder: Text('Tell us about yourself'),
             maxLines: 3,
             textInputAction: TextInputAction.done,
-            prefixIcon: const Icon(Icons.description_outlined),
+            prefix: const Icon(Icons.description_outlined),
             validator: Validators.validateBio,
             onSubmitted: (_) => _handleSubmit(),
           ),
