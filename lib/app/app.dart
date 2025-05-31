@@ -53,14 +53,10 @@ class _AppState extends State<App> {
         theme: AppTheme.getLightTheme(_currentTheme),
         darkTheme: AppTheme.getDarkTheme(_currentTheme),
         themeMode: _themeMode,
-
-        // Router configuration
         routerConfig: AppRouter.router,
 
-        // Global configurations
         builder: (context, child) {
           return MediaQuery(
-            // Ensure text scaling doesn't break the UI
             data: MediaQuery.of(context).copyWith(
               textScaler: TextScaler.linear(
                   MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.2)),
