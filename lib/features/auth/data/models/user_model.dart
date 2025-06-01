@@ -1,5 +1,6 @@
 // lib/features/auth/data/models/user_model.dart
 import 'package:json_annotation/json_annotation.dart';
+import 'package:vyral/core/utils/logger.dart';
 import '../../domain/entities/user_entity.dart';
 
 part 'user_model.g.dart';
@@ -74,7 +75,8 @@ class UserModel extends UserEntity {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     try {
-      print('👤 UserModel.fromJson: Parsing user data: ${json.keys.toList()}');
+      AppLogger.debug(
+          '👤 UserModel.fromJson: Parsing user data: ${json.keys.toList()}');
 
       return UserModel(
         id: json['id']?.toString() ?? '',
@@ -108,8 +110,8 @@ class UserModel extends UserEntity {
             : DateTime.now(),
       );
     } catch (e) {
-      print('❌ UserModel.fromJson: Error parsing user data: $e');
-      print('📄 UserModel.fromJson: JSON data: $json');
+      AppLogger.debug('❌ UserModel.fromJson: Error parsing user data: $e');
+      AppLogger.debug('📄 UserModel.fromJson: JSON data: $json');
       throw Exception('Failed to parse user data: $e');
     }
   }

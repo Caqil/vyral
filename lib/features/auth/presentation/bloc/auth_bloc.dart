@@ -2,6 +2,7 @@
 // lib/features/auth/presentation/bloc/auth_bloc.dart
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:vyral/core/utils/logger.dart';
 import 'package:vyral/main.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/usecases/login_usecase.dart';
@@ -61,16 +62,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     if (emit.isDone) return;
 
-    print('🔍 Auth Check: Starting authentication check...');
+    AppLogger.debug('🔍 Auth Check: Starting authentication check...');
     emit(state.copyWith(status: AuthStatus.loading));
 
     try {
       // Check if we have stored credentials
       final isAuthenticated = await authRepository.isAuthenticated();
-      print('🔍 Auth Check: Has stored credentials: $isAuthenticated');
+      AppLogger.debug(
+          '🔍 Auth Check: Has stored credentials: $isAuthenticated');
 
       if (!isAuthenticated) {
-        print('❌ Auth Check: No stored credentials found');
+        AppLogger.debug('❌ Auth Check: No stored credentials found');
         if (!emit.isDone) {
           emit(state.copyWith(status: AuthStatus.unauthenticated));
         }
@@ -82,7 +84,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       await userResult.fold(
         (failure) async {
-          print('❌ Auth Check: Failed to get user data: ${failure.message}');
+          AppLogger.debug(
+              '❌ Auth Check: Failed to get user data: ${failure.message}');
           // Clear invalid data and set unauthenticated
           await authRepository.clearAuthData();
           if (!emit.isDone) {
@@ -91,7 +94,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         },
         (user) async {
           if (user != null) {
-            print('✅ Auth Check: User data found: ${user.username}');
+            AppLogger.debug('✅ Auth Check: User data found: ${user.username}');
             // Set authenticated state with existing user data
             if (!emit.isDone) {
               emit(state.copyWith(
@@ -101,7 +104,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
               SocialNetworkApp.setCurrentUserId(user.id);
             }
           } else {
-            print('❌ Auth Check: No user data found');
+            AppLogger.debug('❌ Auth Check: No user data found');
             await authRepository.clearAuthData();
             if (!emit.isDone) {
               emit(state.copyWith(status: AuthStatus.unauthenticated));
@@ -110,7 +113,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         },
       );
     } catch (e) {
-      print('💥 Auth Check: Exception occurred: $e');
+      AppLogger.debug('💥 Auth Check: Exception occurred: $e');
       if (!emit.isDone) {
         emit(state.copyWith(
           status: AuthStatus.unauthenticated,
@@ -240,7 +243,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthTokenRefreshRequested event,
     Emitter<AuthState> emit,
   ) async {
-    print('🔄 Manual Token Refresh: User requested token refresh');
+    AppLogger.debug('🔄 Manual Token Refresh: User requested token refresh');
 
     emit(state.copyWith(isLoading: true));
 

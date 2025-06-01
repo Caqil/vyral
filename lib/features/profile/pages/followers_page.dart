@@ -9,6 +9,7 @@ import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/utils/extensions.dart';
+import '../../../core/utils/logger.dart';
 import '../presentation/bloc/follower_event.dart';
 import '../presentation/bloc/follower_state.dart';
 import '../presentation/bloc/followers_bloc.dart';
@@ -56,9 +57,9 @@ class _FollowersPageState extends State<FollowersPage> {
       final state = context.read<FollowersBloc>().state;
 
       // Debug logging
-      print(
+      AppLogger.debug(
           '🔄 Scroll trigger - hasMoreData: ${state.hasMoreData}, isLoadingMore: ${state.isLoadingMore}');
-      print('📊 Current followers: ${state.followers.length}');
+      AppLogger.debug('📊 Current followers: ${state.followers.length}');
 
       if (state.hasMoreData && !state.isLoadingMore) {
         context.read<FollowersBloc>().add(
@@ -70,7 +71,7 @@ class _FollowersPageState extends State<FollowersPage> {
 
   void _loadMore() {
     final state = context.read<FollowersBloc>().state;
-    print(
+    AppLogger.debug(
         '🔄 Manual load more - hasMoreData: ${state.hasMoreData}, isLoadingMore: ${state.isLoadingMore}');
 
     if (state.hasMoreData && !state.isLoadingMore) {
@@ -95,12 +96,12 @@ class _FollowersPageState extends State<FollowersPage> {
       body: BlocConsumer<FollowersBloc, FollowersState>(
         listener: (context, state) {
           // Debug logging
-          print('📱 FollowersBloc State Update:');
-          print('   - Followers count: ${state.followers.length}');
-          print('   - Has more data: ${state.hasMoreData}');
-          print('   - Is loading: ${state.isLoading}');
-          print('   - Is loading more: ${state.isLoadingMore}');
-          print('   - Current page: ${state.currentPage}');
+          AppLogger.debug('📱 FollowersBloc State Update:');
+          AppLogger.debug('   - Followers count: ${state.followers.length}');
+          AppLogger.debug('   - Has more data: ${state.hasMoreData}');
+          AppLogger.debug('   - Is loading: ${state.isLoading}');
+          AppLogger.debug('   - Is loading more: ${state.isLoadingMore}');
+          AppLogger.debug('   - Current page: ${state.currentPage}');
         },
         builder: (context, state) {
           if (state.isLoading && state.followers.isEmpty) {
@@ -150,7 +151,7 @@ class _FollowersPageState extends State<FollowersPage> {
                     children: [
                       Text(
                         '${state.totalCount ?? state.followers.length} followers',
-                        style: theme.textTheme.large?.copyWith(
+                        style: theme.textTheme.large.copyWith(
                           color: colorScheme.foreground,
                           fontWeight: FontWeight.w600,
                         ),
@@ -160,7 +161,7 @@ class _FollowersPageState extends State<FollowersPage> {
                         const SizedBox(height: 4),
                         Text(
                           'Showing ${state.followers.length} • Page ${state.currentPage + 1} • ${state.hasMoreData ? 'More available' : 'All loaded'}',
-                          style: theme.textTheme.small?.copyWith(
+                          style: theme.textTheme.small.copyWith(
                             color: colorScheme.mutedForeground,
                           ),
                         ),
@@ -241,7 +242,7 @@ class _FollowersPageState extends State<FollowersPage> {
                         const SizedBox(width: 8),
                         Text(
                           'All followers loaded',
-                          style: theme.textTheme.small?.copyWith(
+                          style: theme.textTheme.small.copyWith(
                             color: colorScheme.mutedForeground,
                           ),
                         ),
@@ -257,16 +258,16 @@ class _FollowersPageState extends State<FollowersPage> {
   }
 
   void _navigateToProfile(String userId) {
-    context.go('/profile/$userId');
+    context.push('/profile/$userId');
   }
 
   void _navigateToMessage(UserEntity user) {
-    context.go('/messages/new?userId=${user.id}');
+    context.push('/messages/new?userId=${user.id}');
   }
 
   void _handleFollowAction(UserEntity user) {
     // Handle follow/unfollow action
     // This would typically trigger another bloc event
-    print('Follow action for user: ${user.username}');
+    AppLogger.debug('Follow action for user: ${user.username}');
   }
 }

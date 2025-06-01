@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:dio/dio.dart';
+import 'package:vyral/core/utils/logger.dart';
 
 class RetryInterceptor extends Interceptor {
   final int maxRetries;
@@ -36,7 +37,7 @@ class RetryInterceptor extends Interceptor {
     // Check if we should retry this request
     if (_shouldRetry(err, retryCount)) {
       try {
-        print(
+        AppLogger.debug(
             '🔄 Retrying request (${retryCount + 1}/$maxRetries): ${err.requestOptions.path}');
 
         // Calculate delay with exponential backoff
@@ -73,11 +74,11 @@ class RetryInterceptor extends Interceptor {
           options: options,
         );
 
-        print('✅ Retry successful for: ${err.requestOptions.path}');
+        AppLogger.debug('✅ Retry successful for: ${err.requestOptions.path}');
         handler.resolve(response);
         return;
       } catch (retryError) {
-        print('❌ Retry failed for: ${err.requestOptions.path}');
+        AppLogger.debug('❌ Retry failed for: ${err.requestOptions.path}');
         // If retry fails, continue with original error
       }
     }

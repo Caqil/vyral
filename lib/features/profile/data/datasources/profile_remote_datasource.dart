@@ -5,6 +5,7 @@ import 'package:vyral/features/profile/data/models/story_highlight_model.dart';
 import 'package:vyral/features/profile/data/models/user_stats_model.dart';
 import 'package:vyral/shared/models/media_model.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../shared/models/api_response.dart';
 import '../models/user_model.dart';
 
@@ -228,7 +229,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
         },
       );
 
-      print('Raw API Response for getUserPosts: ${response.data}');
+      AppLogger.debug('Raw API Response for getUserPosts: ${response.data}');
 
       final apiResponse = ApiResponse<dynamic>.fromJson(
         response.data,
@@ -248,8 +249,8 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
                 final post = PostModel.fromJson(postData);
                 posts.add(post);
               } catch (e) {
-                print('Error parsing individual post: $e');
-                print('Post data: $postData');
+                AppLogger.debug('Error parsing individual post: $e');
+                AppLogger.debug('Post data: $postData');
                 // Continue with other posts instead of failing completely
               }
             }
@@ -264,8 +265,8 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
                   final post = PostModel.fromJson(postData);
                   posts.add(post);
                 } catch (e) {
-                  print('Error parsing individual post: $e');
-                  print('Post data: $postData');
+                  AppLogger.debug('Error parsing individual post: $e');
+                  AppLogger.debug('Post data: $postData');
                   // Continue with other posts instead of failing completely
                 }
               }
@@ -276,25 +277,25 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
               final post = PostModel.fromJson(data);
               posts.add(post);
             } catch (e) {
-              print('Error parsing post data as single post: $e');
+              AppLogger.debug('Error parsing post data as single post: $e');
             }
           }
         }
 
-        print('Successfully parsed ${posts.length} posts');
+        AppLogger.debug('Successfully parsed ${posts.length} posts');
         return posts;
       } else {
         throw Exception(apiResponse.message ?? 'Failed to get user posts');
       }
     } on DioException catch (e) {
-      print('DioException in getUserPosts: ${e.message}');
-      print('Response data: ${e.response?.data}');
+      AppLogger.debug('DioException in getUserPosts: ${e.message}');
+      AppLogger.debug('Response data: ${e.response?.data}');
       if (e.response?.statusCode == 403) {
         throw Exception('Cannot view posts from private profile');
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      print('General exception in getUserPosts: $e');
+      AppLogger.debug('General exception in getUserPosts: $e');
       throw Exception('Failed to get user posts: $e');
     }
   }
@@ -438,12 +439,12 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   @override
   Future<UserModel> updateProfile(Map<String, dynamic> data) async {
     try {
-      print('🔄 Updating profile with data: $data');
+      AppLogger.debug('🔄 Updating profile with data: $data');
 
       // Use the correct auth endpoint for profile updates
       final response = await _dioClient.put('/auth/profile', data: data);
 
-      print('📡 Profile update response: ${response.data}');
+      AppLogger.debug('📡 Profile update response: ${response.data}');
 
       final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
         response.data,
@@ -451,17 +452,17 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       );
 
       if (apiResponse.success && apiResponse.data != null) {
-        print('✅ Profile updated successfully');
+        AppLogger.debug('✅ Profile updated successfully');
         return UserModel.fromJson(apiResponse.data!);
       } else {
         final errorMessage = apiResponse.message ?? 'Failed to update profile';
-        print('❌ Profile update failed: $errorMessage');
+        AppLogger.debug('❌ Profile update failed: $errorMessage');
         throw Exception(errorMessage);
       }
     } on DioException catch (e) {
-      print('❌ DioException during profile update: ${e.message}');
-      print('❌ Response data: ${e.response?.data}');
-      print('❌ Status code: ${e.response?.statusCode}');
+      AppLogger.debug('❌ DioException during profile update: ${e.message}');
+      AppLogger.debug('❌ Response data: ${e.response?.data}');
+      AppLogger.debug('❌ Status code: ${e.response?.statusCode}');
 
       if (e.response?.statusCode == 401) {
         throw Exception('Authentication required. Please login again.');
@@ -485,7 +486,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      print('❌ General exception during profile update: $e');
+      AppLogger.debug('❌ General exception during profile update: $e');
       throw Exception('Failed to update profile: $e');
     }
   }

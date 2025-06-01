@@ -59,10 +59,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state.successMessage != null) {
-            context.showSuccessSnackBar(context,state.successMessage!);
-            context.go(RouteNames.login);
+            context.showSuccessSnackBar(context, state.successMessage!);
+            context.push(RouteNames.login);
           } else if (state.errorMessage != null) {
-            context.showErrorSnackBar(context,state.errorMessage!);
+            context.showErrorSnackBar(context, state.errorMessage!);
           }
         },
         child: SafeArea(

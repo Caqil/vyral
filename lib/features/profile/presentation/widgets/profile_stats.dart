@@ -377,8 +377,7 @@ class _ProfileStatsState extends State<ProfileStats>
                   ),
                 ],
               )
-            : const SizedBox
-                .shrink();
+            : const SizedBox.shrink();
       },
     );
   }

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:vyral/core/utils/logger.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/profile/pages/edit_profile_page.dart';
 import '../../features/profile/pages/followers_page.dart';
@@ -179,7 +180,7 @@ ProfileBloc _createProfileBloc(BuildContext context) {
     getCurrentUserId: () {
       final authBloc = context.read<AuthBloc>();
       final currentUserId = authBloc.state.user?.id;
-      print('🔑 getCurrentUserId called: $currentUserId');
+      AppLogger.debug('🔑 getCurrentUserId called: $currentUserId');
       return currentUserId;
     },
   );
@@ -194,7 +195,8 @@ EditProfileBloc _createEditProfileBloc(BuildContext context) {
     getCurrentUserId: () {
       final authBloc = context.read<AuthBloc>();
       final currentUserId = authBloc.state.user?.id;
-      print('🔑 getCurrentUserId called in EditProfileBloc: $currentUserId');
+      AppLogger.debug(
+          '🔑 getCurrentUserId called in EditProfileBloc: $currentUserId');
       return currentUserId;
     },
   );

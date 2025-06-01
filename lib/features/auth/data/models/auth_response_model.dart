@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:vyral/core/utils/logger.dart';
 import '../../domain/entities/auth_entity.dart';
 import 'user_model.dart';
 
@@ -50,9 +51,9 @@ class AuthResponseModel extends AuthEntity {
 
       throw Exception('Invalid response format: missing required token fields');
     } catch (e, stackTrace) {
-      print('AuthResponseModel parsing error: $e');
-      print('StackTrace: $stackTrace');
-      print('JSON data: $json');
+      AppLogger.debug('AuthResponseModel parsing error: $e');
+      AppLogger.debug('StackTrace: $stackTrace');
+      AppLogger.debug('JSON data: $json');
       throw Exception('Failed to parse auth response: $e');
     }
   }

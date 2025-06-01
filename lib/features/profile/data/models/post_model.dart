@@ -1,5 +1,6 @@
 // lib/features/profile/data/models/post_model.dart
 import 'package:json_annotation/json_annotation.dart';
+import 'package:vyral/core/utils/logger.dart';
 import 'package:vyral/features/profile/domain/entities/post_entity.dart';
 part 'post_model.g.dart';
 
@@ -98,7 +99,7 @@ class PostModel extends PostEntity {
         try {
           createdAt = DateTime.parse(json['created_at'] as String);
         } catch (e) {
-          print('Error parsing created_at: $e');
+          AppLogger.debug('Error parsing created_at: $e');
         }
       }
 
@@ -107,7 +108,7 @@ class PostModel extends PostEntity {
         try {
           updatedAt = DateTime.parse(json['updated_at'] as String);
         } catch (e) {
-          print('Error parsing updated_at: $e');
+          AppLogger.debug('Error parsing updated_at: $e');
           updatedAt = createdAt;
         }
       }
@@ -137,8 +138,8 @@ class PostModel extends PostEntity {
         updatedAt: updatedAt,
       );
     } catch (e) {
-      print('Error parsing PostModel from JSON: $e');
-      print('JSON data: $json');
+      AppLogger.debug('Error parsing PostModel from JSON: $e');
+      AppLogger.debug('JSON data: $json');
       rethrow;
     }
   }

@@ -142,10 +142,10 @@ def create_directory_structure(base_path):
             new_path = os.path.join(current_path, name)
             if content is None:  # It's a file
                 create_file(new_path)
-                print(f"Created file: {new_path}")
+                AppLogger.debug(f"Created file: {new_path}")
             else:  # It's a directory
                 os.makedirs(new_path, exist_ok=True)
-                print(f"Created directory: {new_path}")
+                AppLogger.debug(f"Created directory: {new_path}")
                 create_structure(new_path, content)
 
     # Start creating the structure
@@ -155,4 +155,4 @@ if __name__ == "__main__":
     # Set the base path to current directory
     base_path = os.getcwd()
     create_directory_structure(base_path)
-    print("Directory structure created successfully!")
+    AppLogger.debug("Directory structure created successfully!")

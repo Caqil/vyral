@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:vyral/core/utils/logger.dart';
 import 'package:vyral/features/auth/presentation/bloc/auth_state.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/widgets/loading_widget.dart';
@@ -62,10 +63,10 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
 
       switch (status) {
         case AuthStatus.authenticated:
-          context.go(RouteNames.home);
+          context.push(RouteNames.home);
           break;
         case AuthStatus.unauthenticated:
-          context.go(RouteNames.login);
+          context.push(RouteNames.login);
           break;
         default:
           // Still loading or error, stay on splash
@@ -87,7 +88,8 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        print('Splash: Auth status changed to ${state.status}'); // Debug log
+        AppLogger.debug(
+            'Splash: Auth status changed to ${state.status}'); // Debug log
 
         if (state.status == AuthStatus.authenticated ||
             state.status == AuthStatus.unauthenticated) {

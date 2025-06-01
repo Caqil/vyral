@@ -97,7 +97,7 @@ class _FollowingPageState extends State<FollowingPage> {
                   widget.userId == 'current_user_id' ? 'Discover People' : null,
               onAction: widget.userId == 'current_user_id'
                   ? () {
-                      context.go('/search');
+                      context.push('/search');
                     }
                   : null,
             );
@@ -123,7 +123,7 @@ class _FollowingPageState extends State<FollowingPage> {
                   ),
                   child: Text(
                     '${state.totalCount ?? state.following.length} following',
-                    style: theme.textTheme.large?.copyWith(
+                    style: theme.textTheme.large.copyWith(
                       color: colorScheme.foreground,
                       fontWeight: FontWeight.w600,
                     ),
@@ -166,11 +166,11 @@ class _FollowingPageState extends State<FollowingPage> {
   }
 
   void _navigateToProfile(String userId) {
-    context.go('/profile/$userId');
+    context.push('/profile/$userId');
   }
 
   void _navigateToMessage(UserEntity user) {
-    context.go('/messages/new?userId=${user.id}');
+    context.push('/messages/new?userId=${user.id}');
   }
 
   void _handleFollowAction(UserEntity user) {

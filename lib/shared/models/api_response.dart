@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:vyral/core/utils/logger.dart';
 
 part 'api_response.g.dart';
 
@@ -30,7 +31,7 @@ class ApiResponse<T> {
       Map<String, dynamic>? errors;
       Map<String, dynamic>? meta;
 
-      print('🔍 Parsing ApiResponse from JSON: $json');
+      AppLogger.debug('🔍 Parsing ApiResponse from JSON: $json');
 
       // Check for explicit success field
       if (json.containsKey('success')) {
@@ -45,13 +46,13 @@ class ApiResponse<T> {
       // Extract data
       if (json.containsKey('data')) {
         final dataValue = json['data'];
-        print('🔍 Found data field: $dataValue');
+        AppLogger.debug('🔍 Found data field: $dataValue');
 
         if (dataValue != null) {
           try {
             data = fromJsonT(dataValue);
           } catch (e) {
-            print('❌ Error parsing data field: $e');
+            AppLogger.debug('❌ Error parsing data field: $e');
             // If parsing fails, try to return the raw data
             if (T == dynamic) {
               data = dataValue as T?;
@@ -62,11 +63,11 @@ class ApiResponse<T> {
         }
       } else if (!json.containsKey('success') && !json.containsKey('status')) {
         // If no wrapper, treat the whole response as data
-        print('🔍 No wrapper found, treating whole response as data');
+        AppLogger.debug('🔍 No wrapper found, treating whole response as data');
         try {
           data = fromJsonT(json);
         } catch (e) {
-          print('❌ Error parsing whole response as data: $e');
+          AppLogger.debug('❌ Error parsing whole response as data: $e');
           if (T == dynamic) {
             data = json as T?;
           } else {
@@ -87,7 +88,7 @@ class ApiResponse<T> {
         meta = json['pagination'] as Map<String, dynamic>;
       }
 
-      print(
+      AppLogger.debug(
           '🔍 Parsed ApiResponse - success: $success, hasData: ${data != null}, message: $message');
 
       return ApiResponse<T>(
@@ -98,8 +99,8 @@ class ApiResponse<T> {
         meta: meta,
       );
     } catch (e) {
-      print('❌ Failed to parse API response: $e');
-      print('❌ JSON data: $json');
+      AppLogger.debug('❌ Failed to parse API response: $e');
+      AppLogger.debug('❌ JSON data: $json');
       throw FormatException('Failed to parse API response: $e');
     }
   }

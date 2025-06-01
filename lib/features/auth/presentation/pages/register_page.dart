@@ -23,10 +23,11 @@ class RegisterPage extends StatelessWidget {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state.status == AuthStatus.authenticated) {
-            context.showSuccessSnackBar(context,'Account created successfully!');
-            context.go(RouteNames.feed);
+            context.showSuccessSnackBar(
+                context, 'Account created successfully!');
+            context.push(RouteNames.feed);
           } else if (state.errorMessage != null) {
-            context.showErrorSnackBar(context,state.errorMessage!);
+            context.showErrorSnackBar(context, state.errorMessage!);
           }
         },
         child: SafeArea(
@@ -98,7 +99,7 @@ class RegisterPage extends StatelessWidget {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => context.go(RouteNames.login),
+                        onTap: () => context.push(RouteNames.login),
                         child: Text(
                           'Sign In',
                           style: theme.textTheme.bodyMedium?.copyWith(

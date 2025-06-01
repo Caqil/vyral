@@ -45,9 +45,9 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state.successMessage != null) {
-            context.showSuccessSnackBar(context,state.successMessage!);
+            context.showSuccessSnackBar(context, state.successMessage!);
           } else if (state.errorMessage != null) {
-            context.showErrorSnackBar(context,state.errorMessage!);
+            context.showErrorSnackBar(context, state.errorMessage!);
           }
         },
         child: SafeArea(
@@ -145,7 +145,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                     if (state.successMessage != null) {
                       return CustomButton(
                         text: 'Continue to App',
-                        onPressed: () => context.go(RouteNames.login),
+                        onPressed: () => context.push(RouteNames.login),
                         isFullWidth: true,
                         icon: Icons.arrow_forward_rounded,
                       );
@@ -169,7 +169,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                           ],
                           CustomButton(
                             text: 'Back to Login',
-                            onPressed: () => context.go(RouteNames.login),
+                            onPressed: () => context.push(RouteNames.login),
                             type: ButtonType.outline,
                             isFullWidth: true,
                           ),

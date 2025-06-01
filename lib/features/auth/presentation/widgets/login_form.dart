@@ -103,7 +103,7 @@ class _LoginFormState extends State<LoginForm> {
                 ],
               ),
               TextButton(
-                onPressed: () => context.go(RouteNames.forgotPassword),
+                onPressed: () => context.push(RouteNames.forgotPassword),
                 child: Text(
                   'Forgot Password?',
                   style: TextStyle(

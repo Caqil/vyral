@@ -178,7 +178,7 @@ class ProfileAboutSection extends StatelessWidget {
         children: [
           Text(
             title,
-            style: theme.textTheme.h4?.copyWith(
+            style: theme.textTheme.h4.copyWith(
               color: colorScheme.foreground,
               fontWeight: FontWeight.bold,
             ),
@@ -217,14 +217,14 @@ class ProfileAboutSection extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: theme.textTheme.small?.copyWith(
+                style: theme.textTheme.small.copyWith(
                   color: colorScheme.mutedForeground,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: theme.textTheme.p?.copyWith(
+                style: theme.textTheme.p.copyWith(
                   color: statusColor ??
                       (isLink ? colorScheme.primary : colorScheme.foreground),
                   decoration: isLink ? TextDecoration.underline : null,

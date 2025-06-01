@@ -153,7 +153,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           Row(
             children: [
               GestureDetector(
-                onTap: () => context.go('/profile/${post.authorId}'),
+                onTap: () => context.push('/profile/${post.authorId}'),
                 child: AvatarWidget(
                   imageUrl: state.author?.profilePicture,
                   name: state.author?.displayName ??
@@ -168,7 +168,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     GestureDetector(
-                      onTap: () => context.go('/profile/${post.authorId}'),
+                      onTap: () => context.push('/profile/${post.authorId}'),
                       child: Row(
                         children: [
                           Text(
@@ -259,7 +259,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
               spacing: 8,
               children: post.hashtags.map((hashtag) {
                 return GestureDetector(
-                  onTap: () => context.go('/search?query=%23$hashtag'),
+                  onTap: () => context.push('/search?query=%23$hashtag'),
                   child: Text(
                     '#$hashtag',
                     style: theme.textTheme.p.copyWith(

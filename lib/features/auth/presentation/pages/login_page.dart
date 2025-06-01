@@ -23,7 +23,7 @@ class LoginPage extends StatelessWidget {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state.status == AuthStatus.authenticated) {
-            context.go(RouteNames.profile);
+            context.push(RouteNames.profile);
           } else if (state.errorMessage != null) {
             context.showErrorSnackBar(context, state.errorMessage!);
           } else if (state.successMessage != null) {
@@ -99,7 +99,7 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => context.go(RouteNames.register),
+                        onTap: () => context.push(RouteNames.register),
                         child: Text(
                           'Sign Up',
                           style: theme.textTheme.bodyMedium?.copyWith(

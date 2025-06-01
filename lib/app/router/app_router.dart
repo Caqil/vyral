@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:vyral/core/utils/logger.dart';
 import 'package:vyral/features/auth/presentation/bloc/auth_event.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
@@ -192,7 +193,7 @@ class AppRouter {
               if (currentUserId == null) {
                 // If no current user, redirect to login
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  context.go(RouteNames.login);
+                  context.push(RouteNames.login);
                 });
                 return const Scaffold(
                   body: Center(
@@ -249,7 +250,7 @@ class AppRouter {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => context.go(RouteNames.home),
+                onPressed: () => context.push(RouteNames.home),
                 child: const Text('Go to Home'),
               ),
             ],
@@ -262,7 +263,8 @@ class AppRouter {
   static String? _redirect(BuildContext context, GoRouterState state) {
     final currentLocation = state.uri.toString();
 
-    print('Router redirect: Current location = $currentLocation'); // Debug log
+    AppLogger.debug(
+        'Router redirect: Current location = $currentLocation'); // Debug log
 
     // Always allow splash page
     if (currentLocation == RouteNames.splash) {
@@ -273,7 +275,8 @@ class AppRouter {
     final authBloc = context.read<AuthBloc>();
     final authState = authBloc.state;
 
-    print('Router redirect: Auth status = ${authState.status}'); // Debug log
+    AppLogger.debug(
+        'Router redirect: Auth status = ${authState.status}'); // Debug log
 
     // Define auth routes
     const authRoutes = [
@@ -406,7 +409,7 @@ class _MainShellState extends State<MainShell> {
         onTap: (index) {
           if (index != _currentIndex) {
             final route = _navigationItems[index].route;
-            context.go(route);
+            context.push(route);
           }
         },
       ),
@@ -432,7 +435,7 @@ class _MainShellState extends State<MainShell> {
               title: const Text('Create Post'),
               onTap: () {
                 Navigator.pop(context);
-                context.go('/post/create');
+                context.push('/post/create');
               },
             ),
             ListTile(
@@ -440,7 +443,7 @@ class _MainShellState extends State<MainShell> {
               title: const Text('Create Story'),
               onTap: () {
                 Navigator.pop(context);
-                context.go('/story/create');
+                context.push('/story/create');
               },
             ),
             ListTile(

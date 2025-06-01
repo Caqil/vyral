@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:vyral/features/profile/presentation/widgets/profile_media_grid.dart';
 import '../../../../core/utils/extensions.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
@@ -9,10 +10,10 @@ import '../../../../core/widgets/error_widget.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/entities/post_entity.dart';
 import '../../domain/entities/media_entity.dart';
-import '../widgets/profile_posts_grid.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_state.dart';
 import 'profile_about_section.dart';
+import 'profile_posts_list.dart';
 
 class ProfileContentTabs extends StatefulWidget {
   final UserEntity user;
@@ -180,14 +181,6 @@ class _ProfileContentTabsState extends State<ProfileContentTabs>
   }
 
   Widget _buildPostsTab(ShadColorScheme colorScheme, ShadThemeData theme) {
-    // Debug print to see what's happening
-    print('Building posts tab:');
-    print('- Posts count: ${widget.posts.length}');
-    print('- Is loading: ${widget.isLoadingPosts}');
-    print('- Is own profile: ${widget.isOwnProfile}');
-    print('- User ID: ${widget.user.id}');
-    print('- Current User ID: ${widget.currentUserId}');
-
     // Check if we're still loading posts
     if (widget.isLoadingPosts && widget.posts.isEmpty) {
       return const Padding(
@@ -232,7 +225,7 @@ class _ProfileContentTabsState extends State<ProfileContentTabs>
         }
 
         // Show posts grid
-        return ProfilePostsGrid(
+        return ProfilePostsList(
           posts: widget.posts,
           isLoading: widget.isLoadingPosts,
           onPostPressed: widget.onPostPressed,
@@ -270,6 +263,7 @@ class _ProfileContentTabsState extends State<ProfileContentTabs>
         // Handle media press
       },
       onLoadMore: widget.onLoadMoreMedia,
+      hasMoreMedia: true,
     );
   }
 

@@ -293,5 +293,3 @@ class _PostEngagementBarState extends State<PostEngagementBar>
     );
   }
 }
-
-

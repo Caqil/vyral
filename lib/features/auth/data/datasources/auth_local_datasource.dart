@@ -1,6 +1,8 @@
 // Updated lib/features/auth/data/datasources/auth_local_datasource.dart
 
 import 'dart:convert';
+import 'package:vyral/core/utils/logger.dart';
+
 import '../../../../core/storage/secure_storage.dart';
 import '../../../../core/constants/storage_constants.dart';
 import '../models/user_model.dart';
@@ -90,9 +92,9 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
         StorageConstants.lastTokenRefresh,
         DateTime.now().toIso8601String(),
       );
-      print('✅ Stored last refresh time');
+      AppLogger.debug('✅ Stored last refresh time');
     } catch (e) {
-      print('❌ Failed to store refresh time: $e');
+      AppLogger.debug('❌ Failed to store refresh time: $e');
       throw e;
     }
   }
@@ -107,7 +109,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       }
       return null;
     } catch (e) {
-      print('❌ Failed to get last refresh time: $e');
+      AppLogger.debug('❌ Failed to get last refresh time: $e');
       return null;
     }
   }
@@ -116,9 +118,9 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   Future<void> clearLastRefreshTime() async {
     try {
       await _secureStorage.delete(StorageConstants.lastTokenRefresh);
-      print('🧹 Cleared last refresh time');
+      AppLogger.debug('🧹 Cleared last refresh time');
     } catch (e) {
-      print('❌ Failed to clear refresh time: $e');
+      AppLogger.debug('❌ Failed to clear refresh time: $e');
     }
   }
 }

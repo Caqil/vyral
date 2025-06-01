@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:vyral/core/utils/logger.dart';
 import '../../domain/usecases/get_user_profile_usecase.dart';
 import '../../domain/usecases/update_profile_usecase.dart';
 import '../../domain/usecases/upload_cover_picture_usecase.dart';
@@ -32,13 +33,13 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
     EditProfileLoadRequested event,
     Emitter<edit.EditProfileState> emit,
   ) async {
-    print('🔄 EditProfileBloc: Loading profile...');
+    AppLogger.debug('🔄 EditProfileBloc: Loading profile...');
     emit(state.copyWith(isLoading: true, hasError: false, errorMessage: null));
 
     try {
       // Get the current user ID
       final currentUserId = getCurrentUserId();
-      print('🔍 EditProfileBloc: Current user ID: $currentUserId');
+      AppLogger.debug('🔍 EditProfileBloc: Current user ID: $currentUserId');
 
       if (currentUserId == null) {
         emit(state.copyWith(
@@ -55,7 +56,7 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
 
       result.fold(
         (failure) {
-          print(
+          AppLogger.debug(
               '❌ EditProfileBloc: Failed to load profile: ${failure.message}');
           emit(state.copyWith(
             isLoading: false,
@@ -64,7 +65,7 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
           ));
         },
         (user) {
-          print(
+          AppLogger.debug(
               '✅ EditProfileBloc: Profile loaded successfully for user: ${user.username}');
           emit(state.copyWith(
             isLoading: false,
@@ -75,7 +76,7 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
         },
       );
     } catch (e) {
-      print('❌ EditProfileBloc: Exception while loading profile: $e');
+      AppLogger.debug('❌ EditProfileBloc: Exception while loading profile: $e');
       emit(state.copyWith(
         isLoading: false,
         hasError: true,
@@ -88,7 +89,7 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
     EditProfileInitialized event,
     Emitter<edit.EditProfileState> emit,
   ) {
-    print('🔄 EditProfileBloc: Profile initialized');
+    AppLogger.debug('🔄 EditProfileBloc: Profile initialized');
     emit(state.copyWith(isInitialized: true));
   }
 
@@ -96,7 +97,7 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
     EditProfileSaveRequested event,
     Emitter<edit.EditProfileState> emit,
   ) async {
-    print('🔄 EditProfileBloc: Saving profile...');
+    AppLogger.debug('🔄 EditProfileBloc: Saving profile...');
     emit(state.copyWith(
       isLoading: true,
       hasError: false,
@@ -121,13 +122,14 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
         isPrivate: event.isPrivate,
       );
 
-      print('🔄 EditProfileBloc: Updating profile with params: $params');
+      AppLogger.debug(
+          '🔄 EditProfileBloc: Updating profile with params: $params');
 
       final result = await updateProfile(params);
 
       result.fold(
         (failure) {
-          print(
+          AppLogger.debug(
               '❌ EditProfileBloc: Failed to update profile: ${failure.message}');
           emit(state.copyWith(
             isLoading: false,
@@ -137,7 +139,7 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
           ));
         },
         (updatedUser) {
-          print('✅ EditProfileBloc: Profile updated successfully');
+          AppLogger.debug('✅ EditProfileBloc: Profile updated successfully');
           emit(state.copyWith(
             isLoading: false,
             user: updatedUser,
@@ -148,7 +150,8 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
         },
       );
     } catch (e) {
-      print('❌ EditProfileBloc: Exception while updating profile: $e');
+      AppLogger.debug(
+          '❌ EditProfileBloc: Exception while updating profile: $e');
       emit(state.copyWith(
         isLoading: false,
         hasError: true,
@@ -162,17 +165,17 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
     EditProfileProfilePictureChanged event,
     Emitter<edit.EditProfileState> emit,
   ) async {
-    print('🔄 EditProfileBloc: Changing profile picture...');
+    AppLogger.debug('🔄 EditProfileBloc: Changing profile picture...');
 
     if (event.imagePath == null) {
       // Remove profile picture
-      print('🔄 EditProfileBloc: Removing profile picture');
+      AppLogger.debug('🔄 EditProfileBloc: Removing profile picture');
       final params = UpdateProfileParams.onlyChanged(profilePicture: '');
       final result = await updateProfile(params);
 
       result.fold(
         (failure) {
-          print(
+          AppLogger.debug(
               '❌ EditProfileBloc: Failed to remove profile picture: ${failure.message}');
           emit(state.copyWith(
             hasError: true,
@@ -180,7 +183,8 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
           ));
         },
         (updatedUser) {
-          print('✅ EditProfileBloc: Profile picture removed successfully');
+          AppLogger.debug(
+              '✅ EditProfileBloc: Profile picture removed successfully');
           emit(state.copyWith(
             user: updatedUser,
             isSuccess: true,
@@ -189,14 +193,14 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
       );
     } else {
       // Upload new profile picture
-      print('🔄 EditProfileBloc: Uploading new profile picture');
+      AppLogger.debug('🔄 EditProfileBloc: Uploading new profile picture');
       emit(state.copyWith(isUploadingProfilePicture: true));
 
       final result = await uploadProfilePicture(event.imagePath!);
 
       result.fold(
         (failure) {
-          print(
+          AppLogger.debug(
               '❌ EditProfileBloc: Failed to upload profile picture: ${failure.message}');
           emit(state.copyWith(
             isUploadingProfilePicture: false,
@@ -205,7 +209,8 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
           ));
         },
         (updatedUser) {
-          print('✅ EditProfileBloc: Profile picture uploaded successfully');
+          AppLogger.debug(
+              '✅ EditProfileBloc: Profile picture uploaded successfully');
           emit(state.copyWith(
             isUploadingProfilePicture: false,
             user: updatedUser,
@@ -220,17 +225,17 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
     EditProfileCoverPictureChanged event,
     Emitter<edit.EditProfileState> emit,
   ) async {
-    print('🔄 EditProfileBloc: Changing cover picture...');
+    AppLogger.debug('🔄 EditProfileBloc: Changing cover picture...');
 
     if (event.imagePath == null) {
       // Remove cover picture
-      print('🔄 EditProfileBloc: Removing cover picture');
+      AppLogger.debug('🔄 EditProfileBloc: Removing cover picture');
       final params = UpdateProfileParams.onlyChanged(coverPicture: '');
       final result = await updateProfile(params);
 
       result.fold(
         (failure) {
-          print(
+          AppLogger.debug(
               '❌ EditProfileBloc: Failed to remove cover picture: ${failure.message}');
           emit(state.copyWith(
             hasError: true,
@@ -238,7 +243,8 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
           ));
         },
         (updatedUser) {
-          print('✅ EditProfileBloc: Cover picture removed successfully');
+          AppLogger.debug(
+              '✅ EditProfileBloc: Cover picture removed successfully');
           emit(state.copyWith(
             user: updatedUser,
             isSuccess: true,
@@ -247,14 +253,14 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
       );
     } else {
       // Upload new cover picture
-      print('🔄 EditProfileBloc: Uploading new cover picture');
+      AppLogger.debug('🔄 EditProfileBloc: Uploading new cover picture');
       emit(state.copyWith(isUploadingCoverPicture: true));
 
       final result = await uploadCoverPicture(event.imagePath!);
 
       result.fold(
         (failure) {
-          print(
+          AppLogger.debug(
               '❌ EditProfileBloc: Failed to upload cover picture: ${failure.message}');
           emit(state.copyWith(
             isUploadingCoverPicture: false,
@@ -263,7 +269,8 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
           ));
         },
         (updatedUser) {
-          print('✅ EditProfileBloc: Cover picture uploaded successfully');
+          AppLogger.debug(
+              '✅ EditProfileBloc: Cover picture uploaded successfully');
           emit(state.copyWith(
             isUploadingCoverPicture: false,
             user: updatedUser,
@@ -278,20 +285,20 @@ class EditProfileBloc extends Bloc<EditProfileEvent, edit.EditProfileState> {
     EditProfileDeactivateRequested event,
     Emitter<edit.EditProfileState> emit,
   ) async {
-    print('🔄 EditProfileBloc: Deactivating account...');
+    AppLogger.debug('🔄 EditProfileBloc: Deactivating account...');
     emit(state.copyWith(isLoading: true));
 
     // This would typically call a deactivate account use case
     try {
       await Future.delayed(const Duration(seconds: 2)); // Simulate API call
 
-      print('✅ EditProfileBloc: Account deactivated successfully');
+      AppLogger.debug('✅ EditProfileBloc: Account deactivated successfully');
       emit(state.copyWith(
         isLoading: false,
         isDeactivated: true,
       ));
     } catch (e) {
-      print('❌ EditProfileBloc: Failed to deactivate account: $e');
+      AppLogger.debug('❌ EditProfileBloc: Failed to deactivate account: $e');
       emit(state.copyWith(
         isLoading: false,
         hasError: true,

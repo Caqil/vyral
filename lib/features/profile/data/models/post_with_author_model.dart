@@ -1,5 +1,6 @@
 // lib/features/profile/data/models/post_with_author_model.dart
 import 'package:json_annotation/json_annotation.dart';
+import 'package:vyral/core/utils/logger.dart';
 import '../../domain/entities/post_with_author_entity.dart';
 import '../../../profile/data/models/user_model.dart';
 import 'post_model.dart';
@@ -77,8 +78,8 @@ class PostWithAuthorModel extends PostWithAuthorEntity {
         authorModel: author,
       );
     } catch (e) {
-      print('Error parsing PostWithAuthorModel from JSON: $e');
-      print('JSON data: $json');
+      AppLogger.debug('Error parsing PostWithAuthorModel from JSON: $e');
+      AppLogger.debug('JSON data: $json');
       rethrow;
     }
   }

@@ -11,6 +11,7 @@ import '../../../../core/utils/validators.dart';
 import '../presentation/bloc/edit_profile_bloc.dart';
 import '../presentation/bloc/edit_profile_event.dart';
 import '../presentation/bloc/edit_profile_state.dart';
+import '../presentation/widgets/cover_picture_editor.dart';
 import '../presentation/widgets/profile_picture_editor.dart';
 import '../presentation/widgets/social_links_editor.dart';
 

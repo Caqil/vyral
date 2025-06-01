@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import 'package:vyral/features/profile/domain/entities/user_entity.dart';
 
 import '../../../../core/error/failures.dart';
+import '../../../../core/utils/logger.dart';
 import '../repositories/profile_repository.dart';
 
 class UpdateProfileUseCase {
@@ -12,10 +13,11 @@ class UpdateProfileUseCase {
 
   Future<Either<Failure, UserEntity>> call(UpdateProfileParams params) async {
     try {
-      print('🔄 UpdateProfileUseCase called with params: ${params.toJson()}');
+      AppLogger.debug(
+          '🔄 UpdateProfileUseCase called with params: ${params.toJson()}');
       return await repository.updateProfile(params.toJson());
     } catch (e) {
-      print('❌ UpdateProfileUseCase error: $e');
+      AppLogger.debug('❌ UpdateProfileUseCase error: $e');
       rethrow;
     }
   }
@@ -105,7 +107,7 @@ class UpdateProfileParams {
       data['is_private'] = isPrivate;
     }
 
-    print('📤 UpdateProfileParams.toJson(): $data');
+    AppLogger.debug('📤 UpdateProfileParams.toJson(): $data');
     return data;
   }
 

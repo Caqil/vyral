@@ -1,5 +1,6 @@
 // lib/features/profile/data/repositories/profile_repository_impl.dart
 import 'package:dartz/dartz.dart';
+import 'package:vyral/core/utils/logger.dart';
 import 'package:vyral/features/profile/data/models/user_model.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
@@ -25,7 +26,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<Either<Failure, UserEntity>> getUserProfile(String userId) async {
     try {
       final currentUserId = getCurrentUserId();
-      print(
+      AppLogger.debug(
           '🔍 ProfileRepositoryImpl.getUserProfile: userId=$userId, currentUserId=$currentUserId');
 
       UserModel user;
@@ -34,26 +35,27 @@ class ProfileRepositoryImpl implements ProfileRepository {
       // Special case: if userId is 'current', always use current user profile endpoint
       if (userId == 'current' ||
           (currentUserId != null && currentUserId == userId)) {
-        print('🔄 Getting current user profile from auth endpoint');
+        AppLogger.debug('🔄 Getting current user profile from auth endpoint');
         // Get current user's profile using auth endpoint
         user = await remoteDataSource.getCurrentUserProfile();
       } else {
-        print('🔄 Getting other user profile from public endpoint');
+        AppLogger.debug('🔄 Getting other user profile from public endpoint');
         // Get other user's profile using public endpoint
         user = await remoteDataSource.getUserProfile(userId);
       }
 
-      print(
+      AppLogger.debug(
           '✅ ProfileRepositoryImpl: User loaded successfully: ${user.username}');
       return Right(user);
     } on ServerException catch (e) {
-      print('❌ ProfileRepositoryImpl: ServerException: ${e.message}');
+      AppLogger.debug('❌ ProfileRepositoryImpl: ServerException: ${e.message}');
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
-      print('❌ ProfileRepositoryImpl: NetworkException: ${e.message}');
+      AppLogger.debug(
+          '❌ ProfileRepositoryImpl: NetworkException: ${e.message}');
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
-      print('❌ ProfileRepositoryImpl: General exception: $e');
+      AppLogger.debug('❌ ProfileRepositoryImpl: General exception: $e');
       final errorMessage = e.toString();
 
       // Handle specific privacy/access errors
@@ -308,21 +310,23 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<Either<Failure, UserEntity>> updateProfile(
       Map<String, dynamic> data) async {
     try {
-      print('🔄 ProfileRepositoryImpl.updateProfile: $data');
+      AppLogger.debug('🔄 ProfileRepositoryImpl.updateProfile: $data');
       final user = await remoteDataSource.updateProfile(data);
-      print('✅ ProfileRepositoryImpl: Profile updated successfully');
+      AppLogger.debug('✅ ProfileRepositoryImpl: Profile updated successfully');
       return Right(user);
     } on ValidationException catch (e) {
-      print('❌ ProfileRepositoryImpl: ValidationException: ${e.message}');
+      AppLogger.debug(
+          '❌ ProfileRepositoryImpl: ValidationException: ${e.message}');
       return Left(ValidationFailure(message: e.message, errors: e.errors));
     } on ServerException catch (e) {
-      print('❌ ProfileRepositoryImpl: ServerException: ${e.message}');
+      AppLogger.debug('❌ ProfileRepositoryImpl: ServerException: ${e.message}');
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
-      print('❌ ProfileRepositoryImpl: NetworkException: ${e.message}');
+      AppLogger.debug(
+          '❌ ProfileRepositoryImpl: NetworkException: ${e.message}');
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
-      print('❌ ProfileRepositoryImpl: General exception: $e');
+      AppLogger.debug('❌ ProfileRepositoryImpl: General exception: $e');
       return Left(ServerFailure(message: 'An unexpected error occurred: $e'));
     }
   }

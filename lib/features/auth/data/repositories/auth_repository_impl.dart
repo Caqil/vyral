@@ -2,6 +2,7 @@
 
 import 'package:dartz/dartz.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:vyral/core/utils/logger.dart';
 import 'dart:io';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
@@ -173,7 +174,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
-      print('RefreshToken Error: $e'); // Debug log
+      AppLogger.debug('RefreshToken Error: $e'); // Debug log
       return Left(ServerFailure(message: 'An unexpected error occurred: $e'));
     }
   }

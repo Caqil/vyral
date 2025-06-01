@@ -1,5 +1,6 @@
 // lib/features/profile/data/models/user_model.dart
 import 'package:json_annotation/json_annotation.dart';
+import 'package:vyral/core/utils/logger.dart';
 import '../../domain/entities/user_entity.dart';
 
 part 'user_model.g.dart';
@@ -83,7 +84,7 @@ class UserModel extends UserEntity {
             dateOfBirth = DateTime.parse(dobString);
           }
         } catch (e) {
-          print('Error parsing date_of_birth: $e');
+          AppLogger.debug('Error parsing date_of_birth: $e');
         }
       }
 
@@ -117,7 +118,7 @@ class UserModel extends UserEntity {
             createdAt = DateTime.parse(createdAtString);
           }
         } catch (e) {
-          print('Error parsing created_at: $e');
+          AppLogger.debug('Error parsing created_at: $e');
         }
       }
 
@@ -130,7 +131,7 @@ class UserModel extends UserEntity {
             updatedAt = DateTime.parse(updatedAtString);
           }
         } catch (e) {
-          print('Error parsing updated_at: $e');
+          AppLogger.debug('Error parsing updated_at: $e');
         }
       }
 
@@ -162,8 +163,8 @@ class UserModel extends UserEntity {
         updatedAt: updatedAt,
       );
     } catch (e) {
-      print('Error parsing UserModel from JSON: $e');
-      print('JSON data: $json');
+      AppLogger.debug('Error parsing UserModel from JSON: $e');
+      AppLogger.debug('JSON data: $json');
       rethrow;
     }
   }

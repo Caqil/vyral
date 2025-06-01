@@ -1,5 +1,5 @@
-
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:vyral/core/utils/logger.dart';
 
 import '../../domain/usecases/follow_user_usecase.dart';
 import '../../domain/usecases/get_follow_status_usecase.dart';
@@ -20,7 +20,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final UnfollowUserUseCase unfollowUser;
   final GetFollowStatusUseCase getFollowStatus;
   final GetUserStatsUseCase getUserStats;
-  final String? Function() getCurrentUserId; 
+  final String? Function() getCurrentUserId;
 
   ProfileBloc({
     required this.getUserProfile,
@@ -53,13 +53,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     try {
       // Get current user ID
       final currentUserId = getCurrentUserId();
-      print('Debug - Current User ID: $currentUserId');
-      print('Debug - Requested User ID: ${event.userId}');
+      AppLogger.debug('Debug - Current User ID: $currentUserId');
+      AppLogger.debug('Debug - Requested User ID: ${event.userId}');
 
       // Check if it's own profile
       final isOwnProfile =
           currentUserId != null && currentUserId == event.userId;
-      print('Debug - Is Own Profile: $isOwnProfile');
+      AppLogger.debug('Debug - Is Own Profile: $isOwnProfile');
 
       // Load user profile
       final profileResult = await getUserProfile(event.userId);
@@ -97,17 +97,17 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             isOwnProfile: isOwnProfile,
           ));
 
-          print('Debug - User loaded: ${user.username}');
-          print('Debug - User is private: ${user.isPrivate}');
+          AppLogger.debug('Debug - User loaded: ${user.username}');
+          AppLogger.debug('Debug - User is private: ${user.isPrivate}');
 
           // Load additional data based on profile accessibility
           // For public profiles or own profile, load all data
           // For private profiles that user doesn't follow, only load follow status
           final canViewContent = isOwnProfile || !user.isPrivate;
-          print('Debug - Can view content: $canViewContent');
+          AppLogger.debug('Debug - Can view content: $canViewContent');
 
           if (canViewContent) {
-            print('Debug - Loading all profile data...');
+            AppLogger.debug('Debug - Loading all profile data...');
             await Future.wait([
               _loadUserStats(user.id, emit),
               _loadFollowStatus(user.id, emit, isOwnProfile),
@@ -115,7 +115,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
               _loadUserMedia(user.id, emit, isInitial: true),
             ]);
           } else {
-            print('Debug - Loading limited profile data...');
+            AppLogger.debug('Debug - Loading limited profile data...');
             // For private profiles, only load follow status if we have a current user
             if (currentUserId != null) {
               await _loadFollowStatus(user.id, emit, isOwnProfile);
@@ -129,7 +129,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         },
       );
     } catch (e) {
-      print('Debug - Error in profile load: $e');
+      AppLogger.debug('Debug - Error in profile load: $e');
       emit(state.copyWith(
         isLoading: false,
         hasError: true,
@@ -287,7 +287,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     result.fold(
       (failure) {
         // Don't emit error for stats failure, just log it
-        print('Failed to load user stats: ${failure.message}');
+        AppLogger.debug('Failed to load user stats: ${failure.message}');
       },
       (stats) {
         emit(state.copyWith(stats: stats));
@@ -306,7 +306,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     result.fold(
       (failure) {
         // Don't emit error for follow status failure
-        print('Failed to load follow status: ${failure.message}');
+        AppLogger.debug('Failed to load follow status: ${failure.message}');
       },
       (followStatus) {
         emit(state.copyWith(followStatus: followStatus));
@@ -321,8 +321,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     bool isRefresh = false,
     bool isLoadMore = false,
   }) async {
-    print('Debug - Loading posts for user: $userId');
-    print(
+    AppLogger.debug('Debug - Loading posts for user: $userId');
+    AppLogger.debug(
         'Debug - Is initial: $isInitial, Is refresh: $isRefresh, Is load more: $isLoadMore');
 
     if (isInitial || isRefresh) {
@@ -337,7 +337,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     }
 
     final page = isLoadMore ? state.postsPage + 1 : 0;
-    print('Debug - Loading posts page: $page');
+    AppLogger.debug('Debug - Loading posts page: $page');
 
     final result = await getUserPosts(GetUserPostsParams(
       userId: userId,
@@ -347,18 +347,18 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
     result.fold(
       (failure) {
-        print('Debug - Failed to load posts: ${failure.message}');
+        AppLogger.debug('Debug - Failed to load posts: ${failure.message}');
         emit(state.copyWith(
           isLoadingPosts: false,
           errorMessage: isInitial ? failure.message : null,
         ));
       },
       (newPosts) {
-        print('Debug - Loaded ${newPosts.length} posts');
+        AppLogger.debug('Debug - Loaded ${newPosts.length} posts');
         final allPosts =
             isInitial || isRefresh ? newPosts : [...state.posts, ...newPosts];
 
-        print('Debug - Total posts after load: ${allPosts.length}');
+        AppLogger.debug('Debug - Total posts after load: ${allPosts.length}');
 
         emit(state.copyWith(
           isLoadingPosts: false,
