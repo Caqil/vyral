@@ -1,22 +1,17 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../../domain/entities/like_entity.dart';
+
 part 'like_model.g.dart';
 
 @JsonSerializable()
-class LikeModel {
-  final String id;
-  final String userId;
-  final String targetId;
-  final String targetType;
-  final String reactionType;
-  final DateTime createdAt;
-
+class LikeModel extends LikeEntity {
   const LikeModel({
-    required this.id,
-    required this.userId,
-    required this.targetId,
-    required this.targetType,
-    required this.reactionType,
-    required this.createdAt,
+    required super.id,
+    required super.userId,
+    required super.targetId,
+    required super.targetType,
+    required super.reactionType,
+    required super.createdAt,
   });
 
   factory LikeModel.fromJson(Map<String, dynamic> json) {

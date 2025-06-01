@@ -1,31 +1,48 @@
-// lib/features/profile/domain/entities/user_entity.dart
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 class UserEntity extends Equatable {
   final String id;
   final String email;
   final String username;
+  @JsonKey(name: 'first_name')
   final String? firstName;
+  @JsonKey(name: 'last_name')
   final String? lastName;
+  @JsonKey(name: 'display_name')
   final String? displayName;
   final String? bio;
+  @JsonKey(name: 'profile_picture')
   final String? profilePicture;
+  @JsonKey(name: 'cover_picture')
   final String? coverPicture;
   final String? website;
   final String? location;
+  @JsonKey(name: 'date_of_birth')
   final DateTime? dateOfBirth;
   final String? gender;
   final String? phone;
+  @JsonKey(name: 'social_links')
   final Map<String, String>? socialLinks;
+  @JsonKey(name: 'is_verified')
   final bool isVerified;
+  @JsonKey(name: 'is_active')
   final bool isActive;
+  @JsonKey(name: 'is_premium')
   final bool isPremium;
+  @JsonKey(name: 'is_private')
   final bool isPrivate;
+  @JsonKey(name: 'followers_count')
   final int followersCount;
+  @JsonKey(name: 'following_count')
   final int followingCount;
+  @JsonKey(name: 'posts_count')
   final int postsCount;
+  @JsonKey(name: 'friends_count')
   final int friendsCount;
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
+  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   const UserEntity({
@@ -148,5 +165,3 @@ class UserEntity extends Equatable {
     );
   }
 }
-
-

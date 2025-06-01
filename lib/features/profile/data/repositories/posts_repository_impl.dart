@@ -1,3 +1,4 @@
+// lib/features/profile/data/repositories/posts_repository_impl.dart
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
@@ -127,7 +128,8 @@ class PostsRepositoryImpl implements PostsRepository {
     try {
       final comments =
           await remoteDataSource.getPostComments(postId, page, limit, sortBy);
-      return Right(comments);
+      // Cast List<CommentWithAuthorModel> to List<CommentWithAuthorEntity>
+      return Right(comments.cast<CommentWithAuthorEntity>());
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -214,7 +216,8 @@ class PostsRepositoryImpl implements PostsRepository {
     try {
       final replies =
           await remoteDataSource.getCommentReplies(commentId, page, limit);
-      return Right(replies);
+      // Cast List<CommentWithAuthorModel> to List<CommentWithAuthorEntity>
+      return Right(replies.cast<CommentWithAuthorEntity>());
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {

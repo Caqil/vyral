@@ -8,7 +8,6 @@ import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/error_widget.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/utils/extensions.dart';
-import '../../../../shared/widgets/bottom_navigation.dart';
 import '../domain/entities/post_entity.dart';
 import '../presentation/bloc/post_detail_bloc.dart';
 import '../presentation/bloc/post_detail_event.dart';

@@ -41,7 +41,7 @@ class _PasswordFieldState extends State<PasswordField> {
       obscureText: _obscureText,
       validator: widget.validator,
       onChanged: widget.onChanged,
-      onSubmitted: widget.onSubmitted,
+      //onSubmitted: widget.onSubmitted,
       prefix: const Icon(Icons.lock_outline),
       suffix: IconButton(
         icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),

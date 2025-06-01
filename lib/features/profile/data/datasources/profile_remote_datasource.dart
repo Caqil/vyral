@@ -18,7 +18,8 @@ abstract class ProfileRemoteDataSource {
   Future<FollowStatusModel> followUser(String userId);
   Future<FollowStatusModel> unfollowUser(String userId);
   Future<List<PostModel>> getUserPosts(String userId, int page, int limit);
-  Future<List<MediaModel>> getUserMedia(String userId, int page, int limit, String? type);
+  Future<List<MediaModel>> getUserMedia(
+      String userId, int page, int limit, String? type);
   Future<List<StoryHighlightModel>> getUserHighlights(String userId);
   Future<List<UserModel>> getFollowers(String userId, int page, int limit);
   Future<List<UserModel>> getFollowing(String userId, int page, int limit);
@@ -34,7 +35,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   Future<UserModel> getUserProfile(String userId) async {
     try {
       final response = await _dioClient.get('/users/$userId/profile');
-      
+
       final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
         response.data,
         (json) => json as Map<String, dynamic>,
@@ -56,7 +57,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   Future<UserModel> getUserByUsername(String username) async {
     try {
       final response = await _dioClient.get('/users/username/$username');
-      
+
       final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
         response.data,
         (json) => json as Map<String, dynamic>,
@@ -81,7 +82,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   Future<UserStatsModel> getUserStats(String userId) async {
     try {
       final response = await _dioClient.get('/users/$userId/stats');
-      
+
       final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
         response.data,
         (json) => json as Map<String, dynamic>,
@@ -101,7 +102,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   Future<FollowStatusModel> getFollowStatus(String userId) async {
     try {
       final response = await _dioClient.get('/users/$userId/follow-status');
-      
+
       final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
         response.data,
         (json) => json as Map<String, dynamic>,
@@ -121,7 +122,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   Future<FollowStatusModel> followUser(String userId) async {
     try {
       final response = await _dioClient.post('/users/$userId/follow');
-      
+
       final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
         response.data,
         (json) => json as Map<String, dynamic>,
@@ -141,7 +142,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   Future<FollowStatusModel> unfollowUser(String userId) async {
     try {
       final response = await _dioClient.delete('/users/$userId/follow');
-      
+
       final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
         response.data,
         (json) => json as Map<String, dynamic>,
@@ -158,7 +159,8 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   }
 
   @override
-  Future<List<PostModel>> getUserPosts(String userId, int page, int limit) async {
+  Future<List<PostModel>> getUserPosts(
+      String userId, int page, int limit) async {
     try {
       final response = await _dioClient.get(
         '/posts/user/$userId',
@@ -167,7 +169,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
           'skip': page * limit,
         },
       );
-      
+
       final apiResponse = ApiResponse<List<dynamic>>.fromJson(
         response.data,
         (json) => json as List<dynamic>,
@@ -186,22 +188,23 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   }
 
   @override
-  Future<List<MediaModel>> getUserMedia(String userId, int page, int limit, String? type) async {
+  Future<List<MediaModel>> getUserMedia(
+      String userId, int page, int limit, String? type) async {
     try {
       final queryParams = {
         'limit': limit,
         'skip': page * limit,
       };
-      
+
       if (type != null) {
-        queryParams['type'] = type;
+        queryParams['type'] = int.parse(type);
       }
 
       final response = await _dioClient.get(
         '/media/user/$userId',
         queryParameters: queryParams,
       );
-      
+
       final apiResponse = ApiResponse<List<dynamic>>.fromJson(
         response.data,
         (json) => json as List<dynamic>,
@@ -223,7 +226,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   Future<List<StoryHighlightModel>> getUserHighlights(String userId) async {
     try {
       final response = await _dioClient.get('/story-highlights/user/$userId');
-      
+
       final apiResponse = ApiResponse<List<dynamic>>.fromJson(
         response.data,
         (json) => json as List<dynamic>,
@@ -231,7 +234,8 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
 
       if (apiResponse.success && apiResponse.data != null) {
         return apiResponse.data!
-            .map((highlight) => StoryHighlightModel.fromJson(highlight as Map<String, dynamic>))
+            .map((highlight) =>
+                StoryHighlightModel.fromJson(highlight as Map<String, dynamic>))
             .toList();
       } else {
         return []; // Return empty list if no highlights
@@ -242,7 +246,8 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   }
 
   @override
-  Future<List<UserModel>> getFollowers(String userId, int page, int limit) async {
+  Future<List<UserModel>> getFollowers(
+      String userId, int page, int limit) async {
     try {
       final response = await _dioClient.get(
         '/users/$userId/followers',
@@ -251,7 +256,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
           'skip': page * limit,
         },
       );
-      
+
       final apiResponse = ApiResponse<List<dynamic>>.fromJson(
         response.data,
         (json) => json as List<dynamic>,
@@ -270,7 +275,8 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   }
 
   @override
-  Future<List<UserModel>> getFollowing(String userId, int page, int limit) async {
+  Future<List<UserModel>> getFollowing(
+      String userId, int page, int limit) async {
     try {
       final response = await _dioClient.get(
         '/users/$userId/following',
@@ -279,7 +285,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
           'skip': page * limit,
         },
       );
-      
+
       final apiResponse = ApiResponse<List<dynamic>>.fromJson(
         response.data,
         (json) => json as List<dynamic>,
@@ -301,7 +307,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   Future<UserModel> updateProfile(Map<String, dynamic> data) async {
     try {
       final response = await _dioClient.put('/users/profile', data: data);
-      
+
       final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
         response.data,
         (json) => json as Map<String, dynamic>,

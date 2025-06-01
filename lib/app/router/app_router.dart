@@ -9,7 +9,6 @@ import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/verify_email_page.dart';
-import '../../shared/widgets/bottom_navigation.dart';
 import 'route_names.dart';
 import 'profile_routes.dart';
 
@@ -302,6 +301,14 @@ class _MainShellState extends State<MainShell> {
         label: 'Messages',
       ),
       route: RouteNames.messages,
+    ),
+    NavigationItem(
+      item: const BottomNavigationBarItem(
+        icon: Icon(Icons.chat_bubble_outline),
+        activeIcon: Icon(Icons.chat_bubble),
+        label: 'Profile',
+      ),
+      route: RouteNames.profile,
     ),
   ];
 

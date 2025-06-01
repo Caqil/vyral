@@ -1,3 +1,4 @@
+// lib/features/profile/data/repositories/profile_repository_impl.dart
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
@@ -109,7 +110,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
   ) async {
     try {
       final posts = await remoteDataSource.getUserPosts(userId, page, limit);
-      return Right(posts);
+      // Cast List<PostModel> to List<PostEntity>
+      return Right(posts.cast<PostEntity>());
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -129,7 +131,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
     try {
       final media =
           await remoteDataSource.getUserMedia(userId, page, limit, type);
-      return Right(media);
+      // Cast List<MediaModel> to List<MediaEntity>
+      return Right(media.cast<MediaEntity>());
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -144,7 +147,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
       String userId) async {
     try {
       final highlights = await remoteDataSource.getUserHighlights(userId);
-      return Right(highlights);
+      // Cast List<StoryHighlightModel> to List<StoryHighlightEntity>
+      return Right(highlights.cast<StoryHighlightEntity>());
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -163,7 +167,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
     try {
       final followers =
           await remoteDataSource.getFollowers(userId, page, limit);
-      return Right(followers);
+      // Cast List<UserModel> to List<UserEntity>
+      return Right(followers.cast<UserEntity>());
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
@@ -182,7 +187,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
     try {
       final following =
           await remoteDataSource.getFollowing(userId, page, limit);
-      return Right(following);
+      // Cast List<UserModel> to List<UserEntity>
+      return Right(following.cast<UserEntity>());
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {

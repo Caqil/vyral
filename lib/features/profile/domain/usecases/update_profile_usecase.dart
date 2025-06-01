@@ -24,6 +24,8 @@ class UpdateProfileParams {
   final DateTime? dateOfBirth;
   final String? gender;
   final String? phone;
+  final String? profilePicture; // Added this field
+  final String? coverPicture; // Added this field
   final Map<String, String>? socialLinks;
   final bool? isPrivate;
 
@@ -37,6 +39,8 @@ class UpdateProfileParams {
     this.dateOfBirth,
     this.gender,
     this.phone,
+    this.profilePicture, // Added this parameter
+    this.coverPicture, // Added this parameter
     this.socialLinks,
     this.isPrivate,
   });
@@ -50,10 +54,15 @@ class UpdateProfileParams {
     if (bio != null) data['bio'] = bio;
     if (website != null) data['website'] = website;
     if (location != null) data['location'] = location;
-    if (dateOfBirth != null)
+    if (dateOfBirth != null) {
       data['date_of_birth'] = dateOfBirth!.toIso8601String();
+    }
     if (gender != null) data['gender'] = gender;
     if (phone != null) data['phone'] = phone;
+    if (profilePicture != null)
+      data['profile_picture'] = profilePicture; // Added this line
+    if (coverPicture != null)
+      data['cover_picture'] = coverPicture; // Added this line
     if (socialLinks != null) data['social_links'] = socialLinks;
     if (isPrivate != null) data['is_private'] = isPrivate;
 
