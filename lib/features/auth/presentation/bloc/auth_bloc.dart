@@ -1,10 +1,9 @@
-// Final AuthBloc with proper storage constants usage
+// Simplified AuthBloc with removed aggressive refresh logic
 // lib/features/auth/presentation/bloc/auth_bloc.dart
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:vyral/main.dart';
 import '../../../../core/error/failures.dart';
-import '../../../../core/constants/storage_constants.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
@@ -23,13 +22,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final ForgotPasswordUseCase forgotPasswordUseCase;
   final VerifyEmailUseCase verifyEmailUseCase;
   final AuthRepository authRepository;
-
-  // Track last refresh attempt to prevent rapid successive calls
-  DateTime? _lastRefreshAttempt;
-  static const Duration _minRefreshInterval =
-      Duration(days: 1); // Only refresh every 1-3 days
-  static const Duration _maxRefreshInterval =
-      Duration(days: 3); // Force refresh after 3 days
 
   AuthBloc({
     required this.loginUseCase,
@@ -62,59 +54,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     add(const AuthCheckRequested());
   }
 
-  /// Check if token refresh is needed based on last refresh time
-  Future<bool> _shouldRefreshToken() async {
-    try {
-      // Access secure storage through repository
-      final secureStorage =
-          (authRepository as dynamic).localDataSource._secureStorage;
-      final lastRefreshString =
-          await secureStorage.read(StorageConstants.lastTokenRefresh);
-
-      if (lastRefreshString == null) {
-        print('🕐 Token Check: No last refresh time found, refresh needed');
-        return true; // First time, should refresh
-      }
-
-      final lastRefreshTime = DateTime.parse(lastRefreshString);
-      final timeSinceRefresh = DateTime.now().difference(lastRefreshTime);
-
-      print(
-          '🕐 Token Check: Last refresh was ${timeSinceRefresh.inDays} days ago');
-
-      // Refresh if it's been more than 1 day since last refresh
-      return timeSinceRefresh >= _minRefreshInterval;
-    } catch (e) {
-      print('❌ Token Check: Error checking refresh time: $e');
-      return true; // If we can't check, better to refresh
-    }
-  }
-
-  /// Store the last refresh time
-  Future<void> _storeLastRefreshTime() async {
-    try {
-      final secureStorage =
-          (authRepository as dynamic).localDataSource._secureStorage;
-      await secureStorage.write(
-          StorageConstants.lastTokenRefresh, DateTime.now().toIso8601String());
-      print('✅ Token Refresh: Stored last refresh time');
-    } catch (e) {
-      print('❌ Token Refresh: Failed to store refresh time: $e');
-    }
-  }
-
-  /// Clear the last refresh time
-  Future<void> _clearLastRefreshTime() async {
-    try {
-      final secureStorage =
-          (authRepository as dynamic).localDataSource._secureStorage;
-      await secureStorage.delete(StorageConstants.lastTokenRefresh);
-      print('🧹 Cleared last refresh time');
-    } catch (e) {
-      print('❌ Failed to clear refresh time: $e');
-    }
-  }
-
+  /// Simplified auth check - no aggressive refresh logic
   Future<void> _onAuthCheckRequested(
     AuthCheckRequested event,
     Emitter<AuthState> emit,
@@ -137,40 +77,35 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return;
       }
 
-      // Get stored user data first
+      // Get stored user data
       final userResult = await authRepository.getCurrentUser();
 
       await userResult.fold(
         (failure) async {
           print('❌ Auth Check: Failed to get user data: ${failure.message}');
-          // Only attempt refresh if we have tokens but no user data
-          await _attemptTokenRefreshIfNeeded(emit, forceRefresh: false);
+          // Clear invalid data and set unauthenticated
+          await authRepository.clearAuthData();
+          if (!emit.isDone) {
+            emit(state.copyWith(status: AuthStatus.unauthenticated));
+          }
         },
         (user) async {
           if (user != null) {
             print('✅ Auth Check: User data found: ${user.username}');
-
-            // Check if we need to refresh based on time
-            final shouldRefresh = await _shouldRefreshToken();
-
-            if (shouldRefresh) {
-              print('🔄 Auth Check: Token refresh needed (1-3 days passed)');
-              await _attemptTokenRefreshIfNeeded(emit, forceRefresh: false);
-            } else {
-              print(
-                  '✅ Auth Check: Using cached auth data (refresh not needed)');
-              // Set authenticated state with existing user data
-              if (!emit.isDone) {
-                emit(state.copyWith(
-                  status: AuthStatus.authenticated,
-                  user: user,
-                ));
-                SocialNetworkApp.setCurrentUserId(user.id);
-              }
+            // Set authenticated state with existing user data
+            if (!emit.isDone) {
+              emit(state.copyWith(
+                status: AuthStatus.authenticated,
+                user: user,
+              ));
+              SocialNetworkApp.setCurrentUserId(user.id);
             }
           } else {
             print('❌ Auth Check: No user data found');
-            await _attemptTokenRefreshIfNeeded(emit, forceRefresh: false);
+            await authRepository.clearAuthData();
+            if (!emit.isDone) {
+              emit(state.copyWith(status: AuthStatus.unauthenticated));
+            }
           }
         },
       );
@@ -181,72 +116,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           status: AuthStatus.unauthenticated,
           errorMessage: 'Failed to check authentication status: $e',
         ));
-      }
-    }
-  }
-
-  /// Only attempt token refresh if we haven't done it recently or if forced
-  /// This prevents rapid successive refresh attempts that cause 429 errors
-  Future<void> _attemptTokenRefreshIfNeeded(
-    Emitter<AuthState> emit, {
-    bool forceRefresh = false,
-  }) async {
-    if (emit.isDone) return;
-
-    final now = DateTime.now();
-
-    // Check if we've attempted refresh recently (prevent rapid retries)
-    if (!forceRefresh && _lastRefreshAttempt != null) {
-      final timeSinceLastAttempt = now.difference(_lastRefreshAttempt!);
-      if (timeSinceLastAttempt < Duration(minutes: 5)) {
-        print(
-            '⏰ Token Refresh: Skipping refresh - attempted ${timeSinceLastAttempt.inMinutes} minutes ago');
-        if (!emit.isDone) {
-          emit(state.copyWith(status: AuthStatus.unauthenticated));
-        }
-        return;
-      }
-    }
-
-    print('🔄 Token Refresh: Attempting token refresh...');
-    _lastRefreshAttempt = now;
-
-    final refreshToken = await authRepository.getRefreshToken();
-
-    if (refreshToken != null) {
-      print('🔄 Token Refresh: Found refresh token, attempting refresh...');
-      final result = await refreshTokenUseCase(refreshToken);
-
-      if (emit.isDone) return;
-
-      result.fold(
-        (failure) {
-          print('❌ Token Refresh: Failed: ${failure.message}');
-          if (!emit.isDone) {
-            emit(state.copyWith(status: AuthStatus.unauthenticated));
-          }
-          // Clear invalid tokens
-          authRepository.clearAuthData();
-          _clearLastRefreshTime();
-        },
-        (authEntity) {
-          print('✅ Token Refresh: Successful');
-          // Store the refresh time
-          _storeLastRefreshTime();
-
-          if (!emit.isDone) {
-            emit(state.copyWith(
-              status: AuthStatus.authenticated,
-              user: authEntity.user,
-            ));
-            SocialNetworkApp.setCurrentUserId(authEntity.user.id);
-          }
-        },
-      );
-    } else {
-      print('❌ Token Refresh: No refresh token available');
-      if (!emit.isDone) {
-        emit(state.copyWith(status: AuthStatus.unauthenticated));
       }
     }
   }
@@ -278,9 +147,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         validationErrors: failure is ValidationFailure ? failure.errors : null,
       )),
       (authEntity) {
-        // Reset refresh tracking on successful login and store refresh time
-        _lastRefreshAttempt = null;
-        _storeLastRefreshTime(); // Store the login time as refresh time
         SocialNetworkApp.setCurrentUserId(authEntity.user.id);
         emit(state.copyWith(
           isLoading: false,
@@ -327,9 +193,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         validationErrors: failure is ValidationFailure ? failure.errors : null,
       )),
       (authEntity) {
-        // Reset refresh tracking on successful registration and store refresh time
-        _lastRefreshAttempt = null;
-        _storeLastRefreshTime(); // Store the registration time as refresh time
         SocialNetworkApp.setCurrentUserId(authEntity.user.id);
         emit(state.copyWith(
           isLoading: false,
@@ -359,11 +222,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         errorMessage: failure.message,
       )),
       (_) {
-        // Clear refresh tracking on logout
-        _lastRefreshAttempt = null;
-        _clearLastRefreshTime();
-
         // Clear all local data and set unauthenticated state
+        SocialNetworkApp.clearCurrentUserId();
         emit(state.copyWith(
           isLoading: false,
           status: AuthStatus.unauthenticated,
@@ -375,18 +235,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
+  /// Manual token refresh only - no automatic refresh
   Future<void> _onAuthTokenRefreshRequested(
     AuthTokenRefreshRequested event,
     Emitter<AuthState> emit,
   ) async {
-    // This is an explicit refresh request, so we force it
-    print('🔄 Explicit Token Refresh: User requested token refresh');
+    print('🔄 Manual Token Refresh: User requested token refresh');
+
+    emit(state.copyWith(isLoading: true));
 
     final refreshToken = await authRepository.getRefreshToken();
 
     if (refreshToken == null) {
       if (!emit.isDone) {
         emit(state.copyWith(
+          isLoading: false,
           status: AuthStatus.unauthenticated,
           user: null,
           errorMessage: 'No refresh token available',
@@ -400,18 +263,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (emit.isDone) return;
 
     result.fold(
-      (failure) => emit(state.copyWith(
-        status: AuthStatus.unauthenticated,
-        user: null,
-        errorMessage: failure.message,
-      )),
-      (authEntity) {
-        // Store the refresh time on successful explicit refresh
-        _storeLastRefreshTime();
-
+      (failure) {
+        // Clear auth data on refresh failure
+        authRepository.clearAuthData();
+        SocialNetworkApp.clearCurrentUserId();
         emit(state.copyWith(
+          isLoading: false,
+          status: AuthStatus.unauthenticated,
+          user: null,
+          errorMessage: failure.message,
+        ));
+      },
+      (authEntity) {
+        emit(state.copyWith(
+          isLoading: false,
           status: AuthStatus.authenticated,
           user: authEntity.user,
+          successMessage: 'Token refreshed successfully',
         ));
         SocialNetworkApp.setCurrentUserId(authEntity.user.id);
       },

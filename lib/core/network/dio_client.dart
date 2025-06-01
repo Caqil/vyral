@@ -1,6 +1,8 @@
 // lib/core/network/dio_client.dart
 import 'package:dio/dio.dart';
+import 'package:get_it/get_it.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import '../../features/auth/data/datasources/auth_local_datasource.dart';
 import '../constants/api_constants.dart';
 import 'interceptors/auth_interceptor.dart';
 import 'interceptors/error_interceptor.dart';
@@ -27,7 +29,6 @@ class DioClient {
         },
       ),
     );
-
     // Add interceptors
     _dio.interceptors.addAll([
       AuthInterceptor(),

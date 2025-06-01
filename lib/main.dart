@@ -155,10 +155,12 @@ class SocialNetworkApp extends StatelessWidget {
     return _postsRepository!;
   }
 
+  // SIMPLE: Get current user ID (synchronous)
   static String? getCurrentUserId() {
     return _currentUserId;
   }
 
+  // SIMPLE: Set user ID after login
   static void setCurrentUserId(String? userId) {
     _currentUserId = userId;
   }

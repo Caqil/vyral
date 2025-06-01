@@ -301,6 +301,7 @@ class _ProfilePageState extends State<ProfilePage>
           onPostPressed: _handlePostPressed,
           onLoadMorePosts: _handleLoadMorePosts,
           onLoadMoreMedia: _handleLoadMoreMedia,
+          isOwnProfile: state.isOwnProfile,
         ),
 
         const SizedBox(height: 32),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/profile/pages/edit_profile_page.dart';
 import '../../features/profile/pages/followers_page.dart';
 import '../../features/profile/pages/following_page.dart';
@@ -174,8 +175,12 @@ ProfileBloc _createProfileBloc(BuildContext context) {
     unfollowUser: SocialNetworkApp.getUnfollowUserUseCase(),
     getFollowStatus: SocialNetworkApp.getFollowStatusUseCase(),
     getUserStats: SocialNetworkApp.getUserStatsUseCase(),
-    getCurrentUserId: () =>
-        SocialNetworkApp.getCurrentUserIdWithContext(context),
+    getCurrentUserId: () {
+      final authBloc = context.read<AuthBloc>();
+      final currentUserId = authBloc.state.user?.id;
+      print('🔑 getCurrentUserId called: $currentUserId');
+      return currentUserId;
+    },
   );
 }
 

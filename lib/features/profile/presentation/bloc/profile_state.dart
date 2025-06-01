@@ -1,18 +1,11 @@
 import 'package:vyral/features/profile/domain/entities/user_entity.dart';
+import 'package:vyral/features/profile/presentation/bloc/profile_bloc.dart';
 
 import '../../domain/entities/follow_status_entity.dart';
 import '../../domain/entities/media_entity.dart';
 import '../../domain/entities/post_entity.dart';
 import '../../domain/entities/story_highlight_entity.dart';
 import '../../domain/entities/user_stats_entity.dart';
-
-enum ProfileErrorType {
-  general,
-  private,
-  suspended,
-  notFound,
-  authRequired,
-}
 
 class ProfileState {
   final UserEntity? user;

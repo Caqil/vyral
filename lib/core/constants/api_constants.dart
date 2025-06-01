@@ -1,15 +1,28 @@
 // lib/core/constants/api_constants.dart
 
+import 'package:flutter/foundation.dart';
+
 class ApiConstants {
   // Base URL - Update this to your actual server URL
   // For local development:
-  static const String baseUrl =
+  static const String _developmentBaseUrl =
       'https://4c35-2001-448a-10b0-5eb1-ccb2-2a40-354c-7fa5.ngrok-free.app/api/v1';
+  static const String _stagingBaseUrl =
+      'https://staging-api.yourapp.com/api/v1';
+  static const String _productionBaseUrl = 'https://api.yourapp.com/api/v1';
+  static String get baseUrl {
+    if (kDebugMode) {
+      return _developmentBaseUrl;
+    } else if (kProfileMode) {
+      return _stagingBaseUrl;
+    } else {
+      return _productionBaseUrl;
+    }
+  }
 
-  // For production or ngrok (update with your actual URL):
-  // static const String baseUrl = 'https://your-ngrok-url.ngrok-free.app/api/v1';
-  // static const String baseUrl = 'https://your-production-domain.com/api/v1';
-
+  // Environment check
+  static bool get isDevelopment => kDebugMode;
+  static bool get isProduction => kReleaseMode;
   // Timeout settings
   static const int connectTimeout = 30000; // 30 seconds
   static const int receiveTimeout = 30000; // 30 seconds

@@ -140,7 +140,11 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       );
 
       if (apiResponse.success && apiResponse.data != null) {
-        return UserStatsModel.fromJson(apiResponse.data!);
+        // Add the userId to the data since it's not returned by the API
+        final statsData = Map<String, dynamic>.from(apiResponse.data!);
+        statsData['user_id'] = userId;
+
+        return UserStatsModel.fromJson(statsData);
       } else {
         throw Exception(apiResponse.message ?? 'Failed to get user stats');
       }

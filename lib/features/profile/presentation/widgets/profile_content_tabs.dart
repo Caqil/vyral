@@ -1,13 +1,17 @@
 // lib/features/profile/presentation/widgets/profile_content_tabs.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../../../core/utils/extensions.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
+import '../../../../core/widgets/error_widget.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/entities/post_entity.dart';
 import '../../domain/entities/media_entity.dart';
 import '../widgets/profile_posts_grid.dart';
+import '../bloc/profile_bloc.dart';
+import '../bloc/profile_state.dart';
 import 'profile_about_section.dart';
 
 class ProfileContentTabs extends StatefulWidget {
@@ -16,9 +20,12 @@ class ProfileContentTabs extends StatefulWidget {
   final List<MediaEntity> media;
   final bool isLoadingPosts;
   final bool isLoadingMedia;
+  final bool isOwnProfile; // Add this parameter
+  final String? currentUserId; // Add this parameter
   final Function(String) onPostPressed;
   final VoidCallback onLoadMorePosts;
   final VoidCallback onLoadMoreMedia;
+  final VoidCallback? onRefreshPosts; // Add refresh callback
 
   const ProfileContentTabs({
     super.key,
@@ -27,9 +34,12 @@ class ProfileContentTabs extends StatefulWidget {
     required this.media,
     required this.isLoadingPosts,
     required this.isLoadingMedia,
+    required this.isOwnProfile,
+    this.currentUserId,
     required this.onPostPressed,
     required this.onLoadMorePosts,
     required this.onLoadMoreMedia,
+    this.onRefreshPosts,
   });
 
   @override
@@ -170,6 +180,15 @@ class _ProfileContentTabsState extends State<ProfileContentTabs>
   }
 
   Widget _buildPostsTab(ShadColorScheme colorScheme, ShadThemeData theme) {
+    // Debug print to see what's happening
+    print('Building posts tab:');
+    print('- Posts count: ${widget.posts.length}');
+    print('- Is loading: ${widget.isLoadingPosts}');
+    print('- Is own profile: ${widget.isOwnProfile}');
+    print('- User ID: ${widget.user.id}');
+    print('- Current User ID: ${widget.currentUserId}');
+
+    // Check if we're still loading posts
     if (widget.isLoadingPosts && widget.posts.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(32),
@@ -177,31 +196,49 @@ class _ProfileContentTabsState extends State<ProfileContentTabs>
       );
     }
 
-    if (widget.posts.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(32),
-        child: EmptyStateWidget(
-          title: 'No Posts Yet',
-          message: widget.user.id == 'current_user_id' // Check if own profile
-              ? 'Share your first post to get started!'
-              : '${widget.user.displayName ?? widget.user.username} hasn\'t posted anything yet.',
-          icon: LucideIcons.fileText,
-          actionText:
-              widget.user.id == 'current_user_id' ? 'Create Post' : null,
-          onAction: widget.user.id == 'current_user_id'
-              ? () {
-                  // Navigate to create post
-                }
-              : null,
-        ),
-      );
-    }
+    // Check ProfileBloc state for errors
+    return BlocBuilder<ProfileBloc, ProfileState>(
+      builder: (context, state) {
+        // If there's an error with posts, show error widget
+        if (state.hasError && widget.posts.isEmpty && !widget.isLoadingPosts) {
+          return Padding(
+            padding: const EdgeInsets.all(32),
+            child: CustomErrorWidget(
+              title: 'Failed to Load Posts',
+              message: state.errorMessage ?? 'Could not load posts',
+              onRetry: widget.onRefreshPosts,
+            ),
+          );
+        }
 
-    return ProfilePostsGrid(
-      posts: widget.posts,
-      isLoading: widget.isLoadingPosts,
-      onPostPressed: widget.onPostPressed,
-      onLoadMore: widget.onLoadMorePosts,
+        // If no posts and not loading, show empty state
+        if (widget.posts.isEmpty && !widget.isLoadingPosts) {
+          return Padding(
+            padding: const EdgeInsets.all(32),
+            child: EmptyStateWidget(
+              title: 'No Posts Yet',
+              message: widget.isOwnProfile
+                  ? 'Share your first post to get started!'
+                  : '${widget.user.displayName ?? widget.user.username} hasn\'t posted anything yet.',
+              icon: LucideIcons.fileText,
+              actionText: widget.isOwnProfile ? 'Create Post' : null,
+              onAction: widget.isOwnProfile
+                  ? () {
+                      // Navigate to create post
+                    }
+                  : null,
+            ),
+          );
+        }
+
+        // Show posts grid
+        return ProfilePostsGrid(
+          posts: widget.posts,
+          isLoading: widget.isLoadingPosts,
+          onPostPressed: widget.onPostPressed,
+          onLoadMore: widget.onLoadMorePosts,
+        );
+      },
     );
   }
 
@@ -218,7 +255,7 @@ class _ProfileContentTabsState extends State<ProfileContentTabs>
         padding: const EdgeInsets.all(32),
         child: EmptyStateWidget(
           title: 'No Media',
-          message: widget.user.id == 'current_user_id'
+          message: widget.isOwnProfile
               ? 'Share photos and videos to see them here.'
               : '${widget.user.displayName ?? widget.user.username} hasn\'t shared any media yet.',
           icon: LucideIcons.image,
