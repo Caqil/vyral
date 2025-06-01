@@ -1,3 +1,4 @@
+// lib/app/router/profile_routes.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -76,7 +77,7 @@ List<RouteBase> profileRoutes = [
     name: 'edit-profile',
     builder: (context, state) {
       return BlocProvider(
-        create: (context) => _createEditProfileBloc(),
+        create: (context) => _createEditProfileBloc(context),
         child: const EditProfilePage(),
       );
     },
@@ -184,12 +185,18 @@ ProfileBloc _createProfileBloc(BuildContext context) {
   );
 }
 
-EditProfileBloc _createEditProfileBloc() {
+EditProfileBloc _createEditProfileBloc(BuildContext context) {
   return EditProfileBloc(
     getUserProfile: SocialNetworkApp.getUserProfileUseCase(),
     updateProfile: SocialNetworkApp.getUpdateProfileUseCase(),
     uploadProfilePicture: SocialNetworkApp.getUploadProfilePictureUseCase(),
     uploadCoverPicture: SocialNetworkApp.getUploadCoverPictureUseCase(),
+    getCurrentUserId: () {
+      final authBloc = context.read<AuthBloc>();
+      final currentUserId = authBloc.state.user?.id;
+      print('🔑 getCurrentUserId called in EditProfileBloc: $currentUserId');
+      return currentUserId;
+    },
   );
 }
 

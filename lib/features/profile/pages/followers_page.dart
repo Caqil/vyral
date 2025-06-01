@@ -1,4 +1,4 @@
-// lib/features/profile/presentation/pages/followers_page.dart
+// lib/features/profile/pages/followers_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -37,6 +37,7 @@ class _FollowersPageState extends State<FollowersPage> {
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
 
+    // Load initial followers
     context.read<FollowersBloc>().add(
           FollowersLoadRequested(userId: widget.userId),
         );
@@ -49,8 +50,30 @@ class _FollowersPageState extends State<FollowersPage> {
   }
 
   void _onScroll() {
+    // Trigger load more when reaching 70% of scroll (more sensitive)
     if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent * 0.8) {
+        _scrollController.position.maxScrollExtent * 0.7) {
+      final state = context.read<FollowersBloc>().state;
+
+      // Debug logging
+      print(
+          '🔄 Scroll trigger - hasMoreData: ${state.hasMoreData}, isLoadingMore: ${state.isLoadingMore}');
+      print('📊 Current followers: ${state.followers.length}');
+
+      if (state.hasMoreData && !state.isLoadingMore) {
+        context.read<FollowersBloc>().add(
+              FollowersLoadMoreRequested(userId: widget.userId),
+            );
+      }
+    }
+  }
+
+  void _loadMore() {
+    final state = context.read<FollowersBloc>().state;
+    print(
+        '🔄 Manual load more - hasMoreData: ${state.hasMoreData}, isLoadingMore: ${state.isLoadingMore}');
+
+    if (state.hasMoreData && !state.isLoadingMore) {
       context.read<FollowersBloc>().add(
             FollowersLoadMoreRequested(userId: widget.userId),
           );
@@ -69,14 +92,22 @@ class _FollowersPageState extends State<FollowersPage> {
             : 'Followers',
         automaticallyImplyLeading: true,
       ),
-      body: BlocBuilder<FollowersBloc, FollowersState>(
+      body: BlocConsumer<FollowersBloc, FollowersState>(
+        listener: (context, state) {
+          // Debug logging
+          print('📱 FollowersBloc State Update:');
+          print('   - Followers count: ${state.followers.length}');
+          print('   - Has more data: ${state.hasMoreData}');
+          print('   - Is loading: ${state.isLoading}');
+          print('   - Is loading more: ${state.isLoadingMore}');
+          print('   - Current page: ${state.currentPage}');
+        },
         builder: (context, state) {
           if (state.isLoading && state.followers.isEmpty) {
             return const LoadingWidget(message: 'Loading followers...');
           }
 
           if (state.hasError && state.followers.isEmpty) {
-            print(state.errorMessage);
             return CustomErrorWidget(
               title: 'Failed to Load',
               message: state.errorMessage ?? 'Failed to load followers',
@@ -89,8 +120,7 @@ class _FollowersPageState extends State<FollowersPage> {
           if (state.followers.isEmpty && !state.isLoading) {
             return EmptyStateWidget(
               title: 'No Followers',
-              message: widget.userId ==
-                      'current_user_id' // Check if own profile
+              message: widget.userId == 'current_user_id'
                   ? 'You don\'t have any followers yet. Start connecting with people!'
                   : 'This user doesn\'t have any followers yet.',
               icon: LucideIcons.users,
@@ -105,7 +135,7 @@ class _FollowersPageState extends State<FollowersPage> {
             },
             child: Column(
               children: [
-                // Header with count
+                // Header with count and debug info
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -115,12 +145,27 @@ class _FollowersPageState extends State<FollowersPage> {
                       bottom: BorderSide(color: colorScheme.border),
                     ),
                   ),
-                  child: Text(
-                    '${state.totalCount ?? state.followers.length} followers',
-                    style: theme.textTheme.large?.copyWith(
-                      color: colorScheme.foreground,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${state.totalCount ?? state.followers.length} followers',
+                        style: theme.textTheme.large?.copyWith(
+                          color: colorScheme.foreground,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      // Debug info (remove in production)
+                      if (state.followers.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Showing ${state.followers.length} • Page ${state.currentPage + 1} • ${state.hasMoreData ? 'More available' : 'All loaded'}',
+                          style: theme.textTheme.small?.copyWith(
+                            color: colorScheme.mutedForeground,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
 
@@ -129,14 +174,45 @@ class _FollowersPageState extends State<FollowersPage> {
                   child: ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount:
-                        state.followers.length + (state.isLoadingMore ? 1 : 0),
+                    itemCount: state.followers.length +
+                        (state.hasMoreData || state.isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
+                      // Show loading indicator or load more button at the end
                       if (index >= state.followers.length) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
+                        if (state.isLoadingMore) {
+                          return const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  CircularProgressIndicator(),
+                                  SizedBox(height: 8),
+                                  Text('Loading more followers...'),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else if (state.hasMoreData) {
+                          // Manual load more button
+                          return Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Center(
+                              child: ShadButton.outline(
+                                onPressed: _loadMore,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(LucideIcons.chevronDown,
+                                        size: 16),
+                                    const SizedBox(width: 8),
+                                    Text('Load More Followers'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
                       }
 
                       final follower = state.followers[index];
@@ -149,6 +225,29 @@ class _FollowersPageState extends State<FollowersPage> {
                     },
                   ),
                 ),
+
+                // Bottom indicator for completed loading
+                if (!state.hasMoreData && state.followers.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          LucideIcons.check,
+                          size: 16,
+                          color: colorScheme.mutedForeground,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'All followers loaded',
+                          style: theme.textTheme.small?.copyWith(
+                            color: colorScheme.mutedForeground,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           );
@@ -168,5 +267,6 @@ class _FollowersPageState extends State<FollowersPage> {
   void _handleFollowAction(UserEntity user) {
     // Handle follow/unfollow action
     // This would typically trigger another bloc event
+    print('Follow action for user: ${user.username}');
   }
 }

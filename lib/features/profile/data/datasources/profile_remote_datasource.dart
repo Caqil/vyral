@@ -1,4 +1,3 @@
-// lib/features/profile/data/datasources/profile_remote_datasource.dart
 import 'package:dio/dio.dart';
 import 'package:vyral/features/profile/data/models/follow_status_model.dart';
 import 'package:vyral/features/profile/data/models/post_model.dart';
@@ -6,7 +5,6 @@ import 'package:vyral/features/profile/data/models/story_highlight_model.dart';
 import 'package:vyral/features/profile/data/models/user_stats_model.dart';
 import 'package:vyral/shared/models/media_model.dart';
 import '../../../../core/network/dio_client.dart';
-import '../../../../core/constants/api_constants.dart';
 import '../../../../shared/models/api_response.dart';
 import '../models/user_model.dart';
 
@@ -440,7 +438,12 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   @override
   Future<UserModel> updateProfile(Map<String, dynamic> data) async {
     try {
-      final response = await _dioClient.put('/users/profile', data: data);
+      print('🔄 Updating profile with data: $data');
+
+      // Use the correct auth endpoint for profile updates
+      final response = await _dioClient.put('/auth/profile', data: data);
+
+      print('📡 Profile update response: ${response.data}');
 
       final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
         response.data,
@@ -448,11 +451,41 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       );
 
       if (apiResponse.success && apiResponse.data != null) {
+        print('✅ Profile updated successfully');
         return UserModel.fromJson(apiResponse.data!);
       } else {
-        throw Exception(apiResponse.message ?? 'Failed to update profile');
+        final errorMessage = apiResponse.message ?? 'Failed to update profile';
+        print('❌ Profile update failed: $errorMessage');
+        throw Exception(errorMessage);
       }
+    } on DioException catch (e) {
+      print('❌ DioException during profile update: ${e.message}');
+      print('❌ Response data: ${e.response?.data}');
+      print('❌ Status code: ${e.response?.statusCode}');
+
+      if (e.response?.statusCode == 401) {
+        throw Exception('Authentication required. Please login again.');
+      } else if (e.response?.statusCode == 403) {
+        throw Exception('You don\'t have permission to update this profile');
+      } else if (e.response?.statusCode == 422) {
+        // Handle validation errors
+        final errorData = e.response?.data;
+        if (errorData is Map<String, dynamic> &&
+            errorData.containsKey('errors')) {
+          final errors = errorData['errors'];
+          if (errors is Map<String, dynamic>) {
+            final errorMessages =
+                errors.values.map((e) => e.toString()).join(', ');
+            throw Exception('Validation error: $errorMessages');
+          }
+        }
+        throw Exception('Invalid data provided');
+      } else if (e.response?.statusCode == 400) {
+        throw Exception('Bad request. Please check your input data.');
+      }
+      throw Exception('Network error: ${e.message}');
     } catch (e) {
+      print('❌ General exception during profile update: $e');
       throw Exception('Failed to update profile: $e');
     }
   }

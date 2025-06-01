@@ -9,7 +9,8 @@ class ApiConstants {
       'https://4c35-2001-448a-10b0-5eb1-ccb2-2a40-354c-7fa5.ngrok-free.app/api/v1';
   static const String _stagingBaseUrl =
       'https://staging-api.yourapp.com/api/v1';
-  static const String _productionBaseUrl = 'https://api.yourapp.com/api/v1';
+  static const String _productionBaseUrl =
+      'https://4c35-2001-448a-10b0-5eb1-ccb2-2a40-354c-7fa5.ngrok-free.app/api/v1';
   static String get baseUrl {
     if (kDebugMode) {
       return _developmentBaseUrl;

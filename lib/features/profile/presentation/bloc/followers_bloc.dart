@@ -1,3 +1,4 @@
+// lib/features/profile/presentation/bloc/followers_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:vyral/features/profile/presentation/bloc/follower_event.dart';
 import 'package:vyral/features/profile/presentation/bloc/follower_state.dart';
@@ -6,6 +7,7 @@ import '../../domain/entities/user_entity.dart';
 
 class FollowersBloc extends Bloc<FollowersEvent, FollowersState> {
   final GetFollowersUseCase getFollowers;
+  static const int _pageSize = 20; // Define page size as constant
 
   FollowersBloc({
     required this.getFollowers,
@@ -24,7 +26,7 @@ class FollowersBloc extends Bloc<FollowersEvent, FollowersState> {
     final result = await getFollowers(GetFollowersParams(
       userId: event.userId,
       page: 0,
-      limit: 20,
+      limit: _pageSize,
     ));
 
     result.fold(
@@ -40,7 +42,7 @@ class FollowersBloc extends Bloc<FollowersEvent, FollowersState> {
           isLoading: false,
           followers: followers,
           currentPage: 0,
-          hasMoreData: followers.length >= 20,
+          hasMoreData: followers.length == _pageSize,
         ));
       },
     );
@@ -66,7 +68,7 @@ class FollowersBloc extends Bloc<FollowersEvent, FollowersState> {
     final result = await getFollowers(GetFollowersParams(
       userId: event.userId,
       page: nextPage,
-      limit: 20,
+      limit: _pageSize,
     ));
 
     result.fold(
@@ -74,11 +76,16 @@ class FollowersBloc extends Bloc<FollowersEvent, FollowersState> {
         emit(state.copyWith(isLoadingMore: false));
       },
       (newFollowers) {
+        final existingIds = state.followers.map((f) => f.id).toSet();
+        final uniqueNewFollowers = newFollowers
+            .where((follower) => !existingIds.contains(follower.id))
+            .toList();
+
         emit(state.copyWith(
           isLoadingMore: false,
-          followers: [...state.followers, ...newFollowers],
+          followers: [...state.followers, ...uniqueNewFollowers],
           currentPage: nextPage,
-          hasMoreData: newFollowers.length >= 20,
+          hasMoreData: newFollowers.length == _pageSize,
         ));
       },
     );

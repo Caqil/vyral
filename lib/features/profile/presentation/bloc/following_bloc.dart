@@ -4,6 +4,7 @@ import 'package:vyral/features/profile/presentation/bloc/following_state.dart';
 
 import '../../domain/usecases/get_following_usecase.dart';
 import '../../domain/usecases/unfollow_user_usecase.dart';
+
 class FollowingBloc extends Bloc<FollowingEvent, FollowingState> {
   final GetFollowingUseCase getFollowing;
   final UnfollowUserUseCase unfollowUser;

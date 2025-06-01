@@ -12,6 +12,7 @@ import '../presentation/bloc/edit_profile_bloc.dart';
 import '../presentation/bloc/edit_profile_event.dart';
 import '../presentation/bloc/edit_profile_state.dart';
 import '../presentation/widgets/profile_picture_editor.dart';
+import '../presentation/widgets/social_links_editor.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -437,7 +438,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           const SizedBox(height: 8),
           Text(
             'When your account is private, only people you approve can see your posts and profile.',
-            style: theme.textTheme.small?.copyWith(
+            style: theme.textTheme.small.copyWith(
               color: colorScheme.mutedForeground,
             ),
           ),
@@ -517,7 +518,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 children: [
                   Text(
                     'Date of Birth',
-                    style: theme.textTheme.small?.copyWith(
+                    style: theme.textTheme.small.copyWith(
                       color: colorScheme.mutedForeground,
                     ),
                   ),

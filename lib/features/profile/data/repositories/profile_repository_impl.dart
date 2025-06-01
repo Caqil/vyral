@@ -25,23 +25,35 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<Either<Failure, UserEntity>> getUserProfile(String userId) async {
     try {
       final currentUserId = getCurrentUserId();
+      print(
+          '🔍 ProfileRepositoryImpl.getUserProfile: userId=$userId, currentUserId=$currentUserId');
+
       UserModel user;
 
       // Check if requesting own profile or another user's profile
-      if (currentUserId != null && currentUserId == userId) {
+      // Special case: if userId is 'current', always use current user profile endpoint
+      if (userId == 'current' ||
+          (currentUserId != null && currentUserId == userId)) {
+        print('🔄 Getting current user profile from auth endpoint');
         // Get current user's profile using auth endpoint
         user = await remoteDataSource.getCurrentUserProfile();
       } else {
+        print('🔄 Getting other user profile from public endpoint');
         // Get other user's profile using public endpoint
         user = await remoteDataSource.getUserProfile(userId);
       }
 
+      print(
+          '✅ ProfileRepositoryImpl: User loaded successfully: ${user.username}');
       return Right(user);
     } on ServerException catch (e) {
+      print('❌ ProfileRepositoryImpl: ServerException: ${e.message}');
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
+      print('❌ ProfileRepositoryImpl: NetworkException: ${e.message}');
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
+      print('❌ ProfileRepositoryImpl: General exception: $e');
       final errorMessage = e.toString();
 
       // Handle specific privacy/access errors
@@ -296,15 +308,21 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<Either<Failure, UserEntity>> updateProfile(
       Map<String, dynamic> data) async {
     try {
+      print('🔄 ProfileRepositoryImpl.updateProfile: $data');
       final user = await remoteDataSource.updateProfile(data);
+      print('✅ ProfileRepositoryImpl: Profile updated successfully');
       return Right(user);
     } on ValidationException catch (e) {
+      print('❌ ProfileRepositoryImpl: ValidationException: ${e.message}');
       return Left(ValidationFailure(message: e.message, errors: e.errors));
     } on ServerException catch (e) {
+      print('❌ ProfileRepositoryImpl: ServerException: ${e.message}');
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
+      print('❌ ProfileRepositoryImpl: NetworkException: ${e.message}');
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
+      print('❌ ProfileRepositoryImpl: General exception: $e');
       return Left(ServerFailure(message: 'An unexpected error occurred: $e'));
     }
   }

@@ -20,7 +20,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final UnfollowUserUseCase unfollowUser;
   final GetFollowStatusUseCase getFollowStatus;
   final GetUserStatsUseCase getUserStats;
-  final String? Function() getCurrentUserId; // Function to get current user ID
+  final String? Function() getCurrentUserId; 
 
   ProfileBloc({
     required this.getUserProfile,
@@ -88,7 +88,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             isLoading: false,
             hasError: true,
             errorMessage: errorMessage,
-            errorType: errorType ?? null,
+            errorType: errorType,
           ));
         },
         (user) async {

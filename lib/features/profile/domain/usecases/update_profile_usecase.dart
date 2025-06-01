@@ -1,3 +1,4 @@
+// lib/features/profile/domain/usecases/update_profile_usecase.dart
 import 'package:dartz/dartz.dart';
 import 'package:vyral/features/profile/domain/entities/user_entity.dart';
 
@@ -10,7 +11,13 @@ class UpdateProfileUseCase {
   UpdateProfileUseCase(this.repository);
 
   Future<Either<Failure, UserEntity>> call(UpdateProfileParams params) async {
-    return await repository.updateProfile(params.toJson());
+    try {
+      print('🔄 UpdateProfileUseCase called with params: ${params.toJson()}');
+      return await repository.updateProfile(params.toJson());
+    } catch (e) {
+      print('❌ UpdateProfileUseCase error: $e');
+      rethrow;
+    }
   }
 }
 
@@ -24,8 +31,8 @@ class UpdateProfileParams {
   final DateTime? dateOfBirth;
   final String? gender;
   final String? phone;
-  final String? profilePicture; // Added this field
-  final String? coverPicture; // Added this field
+  final String? profilePicture;
+  final String? coverPicture;
   final Map<String, String>? socialLinks;
   final bool? isPrivate;
 
@@ -39,8 +46,8 @@ class UpdateProfileParams {
     this.dateOfBirth,
     this.gender,
     this.phone,
-    this.profilePicture, // Added this parameter
-    this.coverPicture, // Added this parameter
+    this.profilePicture,
+    this.coverPicture,
     this.socialLinks,
     this.isPrivate,
   });
@@ -48,24 +55,129 @@ class UpdateProfileParams {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {};
 
-    if (firstName != null) data['first_name'] = firstName;
-    if (lastName != null) data['last_name'] = lastName;
-    if (displayName != null) data['display_name'] = displayName;
-    if (bio != null) data['bio'] = bio;
-    if (website != null) data['website'] = website;
-    if (location != null) data['location'] = location;
+    // Only add non-null and non-empty values to avoid sending unnecessary data
+    if (firstName != null && firstName!.isNotEmpty) {
+      data['first_name'] = firstName!.trim();
+    }
+    if (lastName != null && lastName!.isNotEmpty) {
+      data['last_name'] = lastName!.trim();
+    }
+    if (displayName != null && displayName!.isNotEmpty) {
+      data['display_name'] = displayName!.trim();
+    }
+    if (bio != null) {
+      // Allow empty bio to clear it
+      data['bio'] = bio!.trim();
+    }
+    if (website != null) {
+      // Allow empty website to clear it
+      data['website'] = website!.trim();
+    }
+    if (location != null) {
+      // Allow empty location to clear it
+      data['location'] = location!.trim();
+    }
     if (dateOfBirth != null) {
       data['date_of_birth'] = dateOfBirth!.toIso8601String();
     }
-    if (gender != null) data['gender'] = gender;
-    if (phone != null) data['phone'] = phone;
-    if (profilePicture != null)
-      data['profile_picture'] = profilePicture; // Added this line
-    if (coverPicture != null)
-      data['cover_picture'] = coverPicture; // Added this line
-    if (socialLinks != null) data['social_links'] = socialLinks;
-    if (isPrivate != null) data['is_private'] = isPrivate;
+    if (gender != null && gender!.isNotEmpty) {
+      data['gender'] = gender!.trim();
+    }
+    if (phone != null) {
+      // Allow empty phone to clear it
+      data['phone'] = phone!.trim();
+    }
+    if (profilePicture != null) {
+      data['profile_picture'] = profilePicture!.trim();
+    }
+    if (coverPicture != null) {
+      data['cover_picture'] = coverPicture!.trim();
+    }
+    if (socialLinks != null) {
+      // Filter out empty social links
+      final filteredLinks = Map<String, String>.from(socialLinks!)
+        ..removeWhere((key, value) => value.trim().isEmpty);
+      if (filteredLinks.isNotEmpty) {
+        data['social_links'] = filteredLinks;
+      }
+    }
+    if (isPrivate != null) {
+      data['is_private'] = isPrivate;
+    }
 
+    print('📤 UpdateProfileParams.toJson(): $data');
     return data;
+  }
+
+  // Helper method to create params from current user data with updates
+  factory UpdateProfileParams.fromUserWithUpdates(
+    UserEntity currentUser, {
+    String? firstName,
+    String? lastName,
+    String? displayName,
+    String? bio,
+    String? website,
+    String? location,
+    DateTime? dateOfBirth,
+    String? gender,
+    String? phone,
+    String? profilePicture,
+    String? coverPicture,
+    Map<String, String>? socialLinks,
+    bool? isPrivate,
+  }) {
+    return UpdateProfileParams(
+      firstName: firstName ?? currentUser.firstName,
+      lastName: lastName ?? currentUser.lastName,
+      displayName: displayName ?? currentUser.displayName,
+      bio: bio ?? currentUser.bio,
+      website: website ?? currentUser.website,
+      location: location ?? currentUser.location,
+      dateOfBirth: dateOfBirth ?? currentUser.dateOfBirth,
+      gender: gender ?? currentUser.gender,
+      phone: phone ?? currentUser.phone,
+      profilePicture: profilePicture ?? currentUser.profilePicture,
+      coverPicture: coverPicture ?? currentUser.coverPicture,
+      socialLinks: socialLinks ?? currentUser.socialLinks,
+      isPrivate: isPrivate ?? currentUser.isPrivate,
+    );
+  }
+
+  // Create params with only the fields that have been changed
+  factory UpdateProfileParams.onlyChanged({
+    String? firstName,
+    String? lastName,
+    String? displayName,
+    String? bio,
+    String? website,
+    String? location,
+    DateTime? dateOfBirth,
+    String? gender,
+    String? phone,
+    String? profilePicture,
+    String? coverPicture,
+    Map<String, String>? socialLinks,
+    bool? isPrivate,
+  }) {
+    return UpdateProfileParams(
+      firstName: firstName,
+      lastName: lastName,
+      displayName: displayName,
+      bio: bio,
+      website: website,
+      location: location,
+      dateOfBirth: dateOfBirth,
+      gender: gender,
+      phone: phone,
+      profilePicture: profilePicture,
+      coverPicture: coverPicture,
+      socialLinks: socialLinks,
+      isPrivate: isPrivate,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'UpdateProfileParams(${toJson()})';
   }
 }
