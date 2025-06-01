@@ -7,17 +7,31 @@ part 'comment_with_author_model.g.dart';
 
 @JsonSerializable()
 class CommentWithAuthorModel extends CommentWithAuthorEntity {
+  @JsonKey(name: 'comment')
+  final CommentModel commentModel;
+
+  @JsonKey(name: 'author')
+  final UserModel authorModel;
+
+  @JsonKey(name: 'replies')
+  final List<CommentWithAuthorModel> replyModels;
+
   const CommentWithAuthorModel({
-    required CommentModel comment,
-    required UserModel author,
-    List<CommentWithAuthorModel> replies = const [],
-  }) : super(comment: comment, author: author, replies: replies);
+    required this.commentModel,
+    required this.authorModel,
+    this.replyModels = const [],
+  }) : super(
+          comment: commentModel,
+          author: authorModel,
+          replies: replyModels,
+        );
 
   factory CommentWithAuthorModel.fromJson(Map<String, dynamic> json) {
     return CommentWithAuthorModel(
-      comment: CommentModel.fromJson(json['comment'] as Map<String, dynamic>),
-      author: UserModel.fromJson(json['author'] as Map<String, dynamic>),
-      replies: json['replies'] != null
+      commentModel:
+          CommentModel.fromJson(json['comment'] as Map<String, dynamic>),
+      authorModel: UserModel.fromJson(json['author'] as Map<String, dynamic>),
+      replyModels: json['replies'] != null
           ? (json['replies'] as List)
               .map((reply) => CommentWithAuthorModel.fromJson(
                   reply as Map<String, dynamic>))

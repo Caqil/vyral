@@ -7,15 +7,21 @@ part 'post_with_author_model.g.dart';
 
 @JsonSerializable()
 class PostWithAuthorModel extends PostWithAuthorEntity {
+  @JsonKey(name: 'post')
+  final PostModel postModel;
+
+  @JsonKey(name: 'author')
+  final UserModel authorModel;
+
   const PostWithAuthorModel({
-    required PostModel post,
-    required UserModel author,
-  }) : super(post: post, author: author);
+    required this.postModel,
+    required this.authorModel,
+  }) : super(post: postModel, author: authorModel);
 
   factory PostWithAuthorModel.fromJson(Map<String, dynamic> json) {
     return PostWithAuthorModel(
-      post: PostModel.fromJson(json['post'] as Map<String, dynamic>),
-      author: UserModel.fromJson(json['author'] as Map<String, dynamic>),
+      postModel: PostModel.fromJson(json['post'] as Map<String, dynamic>),
+      authorModel: UserModel.fromJson(json['author'] as Map<String, dynamic>),
     );
   }
 

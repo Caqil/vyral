@@ -63,7 +63,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         actions: [
           ShadButton.ghost(
             onPressed: _showPostOptions,
-            child:  Icon(LucideIcons.menu100),
+            child: const Icon(LucideIcons.menu),
           ),
         ],
       ),
@@ -209,7 +209,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
               ShadButton.ghost(
                 onPressed: _showPostOptions,
                 size: ShadButtonSize.sm,
-                child:  Icon(LucideIcons.menu),
+                child: const Icon(LucideIcons.menu),
               ),
             ],
           ),
@@ -220,7 +220,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           if (post.content.isNotEmpty)
             Text(
               post.content,
-              style: theme.textTheme.small.copyWith(
+              style: theme.textTheme.p.copyWith(
                 color: colorScheme.foreground,
               ),
             ),
@@ -262,7 +262,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   onTap: () => context.go('/search?query=%23$hashtag'),
                   child: Text(
                     '#$hashtag',
-                    style: theme.textTheme.list.copyWith(
+                    style: theme.textTheme.p.copyWith(
                       color: colorScheme.primary,
                     ),
                   ),

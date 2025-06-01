@@ -1,36 +1,23 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../../domain/entities/comment_entity.dart';
 part 'comment_model.g.dart';
 
 @JsonSerializable()
-class CommentModel {
-  final String id;
-  final String postId;
-  final String authorId;
-  final String? parentCommentId;
-  final String content;
-  final String contentType;
-  final List<String> mentions;
-  final int likesCount;
-  final int repliesCount;
-  final bool isLiked;
-  final bool isPinned;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
+class CommentModel extends CommentEntity {
   const CommentModel({
-    required this.id,
-    required this.postId,
-    required this.authorId,
-    this.parentCommentId,
-    required this.content,
-    required this.contentType,
-    this.mentions = const [],
-    this.likesCount = 0,
-    this.repliesCount = 0,
-    this.isLiked = false,
-    this.isPinned = false,
-    required this.createdAt,
-    required this.updatedAt,
+    required super.id,
+    required super.postId,
+    required super.authorId,
+    super.parentCommentId,
+    required super.content,
+    required super.contentType,
+    super.mentions = const [],
+    super.likesCount = 0,
+    super.repliesCount = 0,
+    super.isLiked = false,
+    super.isPinned = false,
+    required super.createdAt,
+    required super.updatedAt,
   });
 
   factory CommentModel.fromJson(Map<String, dynamic> json) {

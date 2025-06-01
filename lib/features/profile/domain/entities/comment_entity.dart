@@ -1,3 +1,4 @@
+// lib/features/profile/domain/entities/comment_entity.dart
 import 'package:equatable/equatable.dart';
 
 class CommentEntity extends Equatable {

@@ -18,8 +18,12 @@ import 'features/auth/domain/usecases/refresh_token_usecase.dart';
 import 'features/auth/domain/usecases/forgot_password_usecase.dart';
 import 'features/auth/domain/usecases/verify_email_usecase.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+
+// Profile imports
 import 'features/profile/data/datasources/profile_remote_datasource.dart';
+import 'features/profile/data/datasources/posts_remote_datasource.dart';
 import 'features/profile/data/repositories/profile_repository_impl.dart';
+import 'features/profile/data/repositories/posts_repository_impl.dart';
 import 'features/profile/domain/usecases/get_user_profile_usecase.dart';
 import 'features/profile/domain/usecases/get_user_by_username_usecase.dart';
 import 'features/profile/domain/usecases/get_user_stats_usecase.dart';
@@ -34,6 +38,13 @@ import 'features/profile/domain/usecases/get_following_usecase.dart';
 import 'features/profile/domain/usecases/update_profile_usecase.dart';
 import 'features/profile/domain/usecases/upload_profile_picture_usecase.dart';
 import 'features/profile/domain/usecases/upload_cover_picture_usecase.dart';
+
+// Post use cases
+import 'features/profile/domain/usecases/get_post_usecase.dart';
+import 'features/profile/domain/usecases/get_post_comments_usecase.dart';
+import 'features/profile/domain/usecases/like_post_usecase.dart';
+import 'features/profile/domain/usecases/create_comment_usecase.dart';
+import 'features/profile/domain/usecases/like_comment_usecase.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -81,6 +92,10 @@ class SocialNetworkApp extends StatelessWidget {
   static ProfileRemoteDataSource? _profileRemoteDataSource;
   static ProfileRepositoryImpl? _profileRepository;
 
+  // Posts related
+  static PostsRemoteDataSource? _postsRemoteDataSource;
+  static PostsRepositoryImpl? _postsRepository;
+
   static DioClient get dioClient {
     if (_sharedDioClient == null) {
       _sharedDioClient = DioClient();
@@ -123,7 +138,18 @@ class SocialNetworkApp extends StatelessWidget {
     return _profileRepository!;
   }
 
-  // Auth Use Cases
+  // Posts Repository
+  static PostsRepositoryImpl get postsRepository {
+    if (_postsRepository == null) {
+      _postsRemoteDataSource ??= PostsRemoteDataSourceImpl(dioClient);
+      _postsRepository = PostsRepositoryImpl(
+        remoteDataSource: _postsRemoteDataSource!,
+      );
+    }
+    return _postsRepository!;
+  }
+
+  // Profile Use Cases
   static GetUserProfileUseCase getUserProfileUseCase() =>
       GetUserProfileUseCase(profileRepository);
   static GetUserByUsernameUseCase getUserByUsernameUseCase() =>
@@ -153,14 +179,16 @@ class SocialNetworkApp extends StatelessWidget {
   static UploadCoverPictureUseCase getUploadCoverPictureUseCase() =>
       UploadCoverPictureUseCase(profileRepository);
 
-  // Placeholder use cases for post and comment functionality
-  static GetPostUseCase getPostUseCase() => GetPostUseCase();
+  // Post Use Cases
+  static GetPostUseCase getPostUseCase() => GetPostUseCase(postsRepository);
   static GetPostCommentsUseCase getPostCommentsUseCase() =>
-      GetPostCommentsUseCase();
-  static LikePostUseCase getLikePostUseCase() => LikePostUseCase();
+      GetPostCommentsUseCase(postsRepository);
+  static LikePostUseCase getLikePostUseCase() =>
+      LikePostUseCase(postsRepository);
   static CreateCommentUseCase getCreateCommentUseCase() =>
-      CreateCommentUseCase();
-  static LikeCommentUseCase getLikeCommentUseCase() => LikeCommentUseCase();
+      CreateCommentUseCase(postsRepository);
+  static LikeCommentUseCase getLikeCommentUseCase() =>
+      LikeCommentUseCase(postsRepository);
 
   AuthBloc _createAuthBloc() {
     // Create use cases
