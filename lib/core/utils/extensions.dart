@@ -6,52 +6,30 @@ extension BuildContextExtensions on BuildContext {
   // Theme extensions
   ShadColorScheme get colorScheme => ShadTheme.of(this).colorScheme;
   ShadThemeData get shadTheme => ShadTheme.of(this);
-  
+
   // Navigation extensions
-  void showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(this).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
+  void showSuccessSnackBar(BuildContext context, String message) {
+    ShadToaster.of(context).show(
+      ShadToast.raw(
+        variant: ShadToastVariant.primary,
+        description: Text(message),
       ),
     );
   }
 
-  void showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(this).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
+  void showErrorSnackBar(BuildContext context, String message) {
+    ShadToaster.of(context).show(
+      ShadToast.raw(
+        variant: ShadToastVariant.destructive,
+        description: Text(message),
       ),
     );
   }
 
-  void showInfoSnackBar(String message) {
-    ScaffoldMessenger.of(this).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.info, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.blue,
-        behavior: SnackBarBehavior.floating,
+  void showInfoSnackBar(BuildContext context, String message) {
+    ShadToaster.of(context).show(
+      ShadToast(
+        description: Text(message),
       ),
     );
   }
@@ -145,16 +123,36 @@ extension DateTimeExtensions on DateTime {
 
   String _formatMonthDay() {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return '${months[month - 1]} $day';
   }
 
   String _formatFullDate() {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return '${months[month - 1]} $day, $year';
   }
@@ -173,5 +171,3 @@ extension ListExtensions<T> on List<T> {
     return isEmpty ? null : last;
   }
 }
-
-

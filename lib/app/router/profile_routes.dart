@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../features/profile/pages/edit_profile_page.dart';
@@ -13,7 +14,7 @@ import '../../features/profile/presentation/bloc/post_detail_bloc.dart';
 import '../../main.dart'; // For dependency injection
 
 List<RouteBase> profileRoutes = [
-  // Profile routes
+  // Profile routes - Full screen profile pages
   GoRoute(
     path: '/profile/:userId',
     name: 'profile',
@@ -102,8 +103,63 @@ List<RouteBase> profileRoutes = [
       final username = state.pathParameters['username']!;
 
       // In a real app, you'd fetch the userId for this username
-      // For now, we'll assume username = userId
+      // For now, we'll assume username = userId for demo purposes
+      // You should implement a proper username -> userId lookup here
       return '/profile/$username?username=$username';
+    },
+  ),
+
+  // Create post route (full screen)
+  GoRoute(
+    path: '/post/create',
+    name: 'create-post',
+    builder: (context, state) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Create Post Page - Coming Soon'),
+        ),
+      );
+    },
+  ),
+
+  // Create story route (full screen)
+  GoRoute(
+    path: '/story/create',
+    name: 'create-story',
+    builder: (context, state) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Create Story Page - Coming Soon'),
+        ),
+      );
+    },
+  ),
+
+  // Story detail route
+  GoRoute(
+    path: '/story/:storyId',
+    name: 'story-detail',
+    builder: (context, state) {
+      final storyId = state.pathParameters['storyId']!;
+      return Scaffold(
+        body: Center(
+          child: Text('Story Detail: $storyId'),
+        ),
+      );
+    },
+  ),
+
+  // Story highlight route
+  GoRoute(
+    path: '/stories/highlight/:highlightId',
+    name: 'story-highlight',
+    builder: (context, state) {
+      final highlightId = state.pathParameters['highlightId']!;
+      return Scaffold(
+        body: Center(
+          child: Text('Story Highlight: $highlightId'),
+        ),
+      );
     },
   ),
 ];

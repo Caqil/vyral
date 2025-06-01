@@ -23,10 +23,10 @@ class RegisterPage extends StatelessWidget {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state.status == AuthStatus.authenticated) {
-            context.showSuccessSnackBar('Account created successfully!');
+            context.showSuccessSnackBar(context,'Account created successfully!');
             context.go(RouteNames.feed);
           } else if (state.errorMessage != null) {
-            context.showErrorSnackBar(state.errorMessage!);
+            context.showErrorSnackBar(context,state.errorMessage!);
           }
         },
         child: SafeArea(

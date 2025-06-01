@@ -419,7 +419,7 @@ class _ProfileActionButtonsState extends State<ProfileActionButtons>
 
   void _copyProfileLink() {
     // Copy profile link to clipboard
-    context.showSuccessSnackBar('Profile link copied to clipboard');
+    context.showSuccessSnackBar(context,'Profile link copied to clipboard');
   }
 
   void _showQRCode() {

@@ -3,7 +3,8 @@
 class ApiConstants {
   // Base URL - Update this to your actual server URL
   // For local development:
-  static const String baseUrl = 'http://localhost:8080/api/v1';
+  static const String baseUrl =
+      'https://4c35-2001-448a-10b0-5eb1-ccb2-2a40-354c-7fa5.ngrok-free.app/api/v1';
 
   // For production or ngrok (update with your actual URL):
   // static const String baseUrl = 'https://your-ngrok-url.ngrok-free.app/api/v1';

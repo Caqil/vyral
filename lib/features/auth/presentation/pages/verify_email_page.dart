@@ -45,9 +45,9 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state.successMessage != null) {
-            context.showSuccessSnackBar(state.successMessage!);
+            context.showSuccessSnackBar(context,state.successMessage!);
           } else if (state.errorMessage != null) {
-            context.showErrorSnackBar(state.errorMessage!);
+            context.showErrorSnackBar(context,state.errorMessage!);
           }
         },
         child: SafeArea(

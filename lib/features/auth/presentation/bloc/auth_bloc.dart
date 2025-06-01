@@ -1,3 +1,5 @@
+// Fixed AuthBloc - lib/features/auth/presentation/bloc/auth_bloc.dart
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/usecases/login_usecase.dart';
@@ -40,37 +42,141 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthSessionsRequested>(_onAuthSessionsRequested);
     on<AuthRevokeSessionRequested>(_onAuthRevokeSessionRequested);
     on<AuthClearErrorRequested>(_onAuthClearErrorRequested);
+
+    // Automatically check auth status when bloc is created
+    _checkInitialAuthState();
+  }
+
+  // Check auth state immediately when bloc is created
+  void _checkInitialAuthState() {
+    add(const AuthCheckRequested());
   }
 
   Future<void> _onAuthCheckRequested(
     AuthCheckRequested event,
     Emitter<AuthState> emit,
   ) async {
+    if (emit.isDone) return; // Safety check
+
     emit(state.copyWith(status: AuthStatus.loading));
 
-    final isAuthenticated = await authRepository.isAuthenticated();
+    try {
+      // First check if we have stored credentials
+      final isAuthenticated = await authRepository.isAuthenticated();
 
-    if (isAuthenticated) {
+      if (!isAuthenticated) {
+        if (!emit.isDone) {
+          emit(state.copyWith(status: AuthStatus.unauthenticated));
+        }
+        return;
+      }
+
+      // Get stored user data
       final userResult = await authRepository.getCurrentUser();
 
-      userResult.fold(
-        (failure) => emit(state.copyWith(
-          status: AuthStatus.unauthenticated,
-          errorMessage: failure.message,
-        )),
-        (user) {
+      await userResult.fold(
+        (failure) async {
+          // If we can't get user data, try to refresh token
+          await _attemptTokenRefresh(emit);
+        },
+        (user) async {
           if (user != null) {
+            // User data found, validate session by refreshing token
+            await _validateAndSetAuthState(user, emit);
+          } else {
+            if (!emit.isDone) {
+              emit(state.copyWith(status: AuthStatus.unauthenticated));
+            }
+          }
+        },
+      );
+    } catch (e) {
+      if (!emit.isDone) {
+        emit(state.copyWith(
+          status: AuthStatus.unauthenticated,
+          errorMessage: 'Failed to check authentication status',
+        ));
+      }
+    }
+  }
+
+  Future<void> _validateAndSetAuthState(
+      dynamic user, Emitter<AuthState> emit) async {
+    if (emit.isDone) return; // Safety check
+
+    try {
+      // Try to refresh token to validate current session
+      final refreshToken = await authRepository.getRefreshToken();
+
+      if (refreshToken != null) {
+        final refreshResult = await refreshTokenUseCase(refreshToken);
+
+        if (emit.isDone) return; // Check before emitting
+
+        refreshResult.fold(
+          (failure) {
+            // Token refresh failed, logout user
+            if (!emit.isDone) {
+              emit(state.copyWith(status: AuthStatus.unauthenticated));
+            }
+            // Clear auth data without awaiting to avoid blocking
+            authRepository.clearAuthData();
+          },
+          (authEntity) {
+            // Token refresh successful, user is authenticated
+            if (!emit.isDone) {
+              emit(state.copyWith(
+                status: AuthStatus.authenticated,
+                user: authEntity.user,
+              ));
+            }
+          },
+        );
+      } else {
+        // No refresh token, user needs to login again
+        if (!emit.isDone) {
+          emit(state.copyWith(status: AuthStatus.unauthenticated));
+        }
+        authRepository.clearAuthData();
+      }
+    } catch (e) {
+      // If refresh fails, assume user needs to login again
+      if (!emit.isDone) {
+        emit(state.copyWith(status: AuthStatus.unauthenticated));
+      }
+      authRepository.clearAuthData();
+    }
+  }
+
+  Future<void> _attemptTokenRefresh(Emitter<AuthState> emit) async {
+    if (emit.isDone) return; // Safety check
+
+    final refreshToken = await authRepository.getRefreshToken();
+
+    if (refreshToken != null) {
+      final result = await refreshTokenUseCase(refreshToken);
+
+      if (emit.isDone) return; // Check before emitting
+
+      result.fold(
+        (failure) {
+          if (!emit.isDone) {
+            emit(state.copyWith(status: AuthStatus.unauthenticated));
+          }
+        },
+        (authEntity) {
+          if (!emit.isDone) {
             emit(state.copyWith(
               status: AuthStatus.authenticated,
-              user: user,
+              user: authEntity.user,
             ));
-          } else {
-            emit(state.copyWith(status: AuthStatus.unauthenticated));
           }
         },
       );
     } else {
-      emit(state.copyWith(status: AuthStatus.unauthenticated));
+      if (!emit.isDone) {
+        emit(state.copyWith(status: AuthStatus.unauthenticated));
+      }
     }
   }
 
@@ -91,6 +197,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     final result = await loginUseCase(params);
 
+    if (emit.isDone) return;
+
     result.fold(
       (failure) => emit(state.copyWith(
         isLoading: false,
@@ -98,12 +206,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         errorMessage: failure.message,
         validationErrors: failure is ValidationFailure ? failure.errors : null,
       )),
-      (authEntity) => emit(state.copyWith(
-        isLoading: false,
-        status: AuthStatus.authenticated,
-        user: authEntity.user,
-        successMessage: 'Login successful',
-      )),
+      (authEntity) {
+        // Successfully logged in, set authenticated state
+        emit(state.copyWith(
+          isLoading: false,
+          status: AuthStatus.authenticated,
+          user: authEntity.user,
+          successMessage: 'Login successful',
+        ));
+      },
     );
   }
 
@@ -132,6 +243,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     final result = await registerUseCase(params);
 
+    if (emit.isDone) return;
+
     result.fold(
       (failure) => emit(state.copyWith(
         isLoading: false,
@@ -158,18 +271,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         ? await authRepository.logoutFromAllSessions()
         : await logoutUseCase();
 
+    if (emit.isDone) return;
+
     result.fold(
       (failure) => emit(state.copyWith(
         isLoading: false,
         errorMessage: failure.message,
       )),
-      (_) => emit(state.copyWith(
-        isLoading: false,
-        status: AuthStatus.unauthenticated,
-        user: null,
-        sessions: null,
-        successMessage: 'Logout successful',
-      )),
+      (_) {
+        // Clear all local data and set unauthenticated state
+        emit(state.copyWith(
+          isLoading: false,
+          status: AuthStatus.unauthenticated,
+          user: null,
+          sessions: null,
+          successMessage: 'Logout successful',
+        ));
+      },
     );
   }
 
@@ -180,15 +298,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final refreshToken = await authRepository.getRefreshToken();
 
     if (refreshToken == null) {
-      emit(state.copyWith(
-        status: AuthStatus.unauthenticated,
-        user: null,
-        errorMessage: 'No refresh token available',
-      ));
+      if (!emit.isDone) {
+        emit(state.copyWith(
+          status: AuthStatus.unauthenticated,
+          user: null,
+          errorMessage: 'No refresh token available',
+        ));
+      }
       return;
     }
 
     final result = await refreshTokenUseCase(refreshToken);
+
+    if (emit.isDone) return;
 
     result.fold(
       (failure) => emit(state.copyWith(
@@ -214,6 +336,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     ));
 
     final result = await forgotPasswordUseCase(event.email);
+
+    if (emit.isDone) return;
 
     result.fold(
       (failure) => emit(state.copyWith(
@@ -244,6 +368,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       confirmPassword: event.confirmPassword,
     );
 
+    if (emit.isDone) return;
+
     result.fold(
       (failure) => emit(state.copyWith(
         isLoading: false,
@@ -268,6 +394,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     final result = await verifyEmailUseCase(event.token);
 
+    if (emit.isDone) return;
+
     result.fold(
       (failure) => emit(state.copyWith(
         isLoading: false,
@@ -291,6 +419,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       email: event.email,
     );
 
+    if (emit.isDone) return;
+
     result.fold(
       (failure) => emit(state.copyWith(
         isCheckingUser: false,
@@ -310,6 +440,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(state.copyWith(isLoading: true));
 
     final result = await authRepository.getUserSessions();
+
+    if (emit.isDone) return;
 
     result.fold(
       (failure) => emit(state.copyWith(
@@ -331,17 +463,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     final result = await authRepository.revokeSession(event.sessionId);
 
+    if (emit.isDone) return;
+
     result.fold(
       (failure) => emit(state.copyWith(
         isLoading: false,
         errorMessage: failure.message,
       )),
       (_) {
-        // Remove the revoked session from the list
         final updatedSessions = state.sessions
-            ?.where(
-              (session) => session.id != event.sessionId,
-            )
+            ?.where((session) => session.id != event.sessionId)
             .toList();
 
         emit(state.copyWith(

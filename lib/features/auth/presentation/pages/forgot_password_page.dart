@@ -47,10 +47,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state.successMessage != null) {
-            context.showSuccessSnackBar(state.successMessage!);
+            context.showSuccessSnackBar(context, state.successMessage!);
             context.pop();
           } else if (state.errorMessage != null) {
-            context.showErrorSnackBar(state.errorMessage!);
+            context.showErrorSnackBar(context, state.errorMessage!);
           }
         },
         child: SafeArea(
@@ -107,7 +107,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     keyboardType: TextInputType.emailAddress,
                     prefix: const Icon(Icons.email_outlined),
                     validator: Validators.validateEmail,
-                   onTap: () => _handleSubmit(),
+                    onTap: () => _handleSubmit(),
                   ),
 
                   const SizedBox(height: 32),

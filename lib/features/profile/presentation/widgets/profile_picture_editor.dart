@@ -239,11 +239,11 @@ class _ProfilePictureEditorState extends State<ProfilePictureEditor> {
       widget.onImageChanged(imagePath);
 
       if (mounted) {
-        context.showSuccessSnackBar('Profile picture updated');
+        context.showSuccessSnackBar(context,'Profile picture updated');
       }
     } catch (e) {
       if (mounted) {
-        context.showErrorSnackBar('Failed to take photo');
+        context.showErrorSnackBar(context,'Failed to take photo');
       }
     } finally {
       setState(() => _isUploading = false);
@@ -263,11 +263,11 @@ class _ProfilePictureEditorState extends State<ProfilePictureEditor> {
       widget.onImageChanged(imagePath);
 
       if (mounted) {
-        context.showSuccessSnackBar('Profile picture updated');
+        context.showSuccessSnackBar(context,'Profile picture updated');
       }
     } catch (e) {
       if (mounted) {
-        context.showErrorSnackBar('Failed to pick image');
+        context.showErrorSnackBar(context,'Failed to pick image');
       }
     } finally {
       setState(() => _isUploading = false);
@@ -277,7 +277,7 @@ class _ProfilePictureEditorState extends State<ProfilePictureEditor> {
   void _removeImage() {
     setState(() => _tempImagePath = null);
     widget.onImageChanged(null);
-    context.showSuccessSnackBar('Profile picture removed');
+    context.showSuccessSnackBar(context,'Profile picture removed');
   }
 }
 
@@ -542,11 +542,11 @@ class _CoverPictureEditorState extends State<CoverPictureEditor> {
       widget.onImageChanged(imagePath);
 
       if (mounted) {
-        context.showSuccessSnackBar('Cover picture updated');
+        context.showSuccessSnackBar(context,'Cover picture updated');
       }
     } catch (e) {
       if (mounted) {
-        context.showErrorSnackBar('Failed to take photo');
+        context.showErrorSnackBar(context,'Failed to take photo');
       }
     } finally {
       setState(() => _isUploading = false);
@@ -565,11 +565,11 @@ class _CoverPictureEditorState extends State<CoverPictureEditor> {
       widget.onImageChanged(imagePath);
 
       if (mounted) {
-        context.showSuccessSnackBar('Cover picture updated');
+        context.showSuccessSnackBar(context,'Cover picture updated');
       }
     } catch (e) {
       if (mounted) {
-        context.showErrorSnackBar('Failed to pick image');
+        context.showErrorSnackBar(context,'Failed to pick image');
       }
     } finally {
       setState(() => _isUploading = false);
@@ -579,7 +579,7 @@ class _CoverPictureEditorState extends State<CoverPictureEditor> {
   void _removeImage() {
     setState(() => _tempImagePath = null);
     widget.onImageChanged(null);
-    context.showSuccessSnackBar('Cover picture removed');
+    context.showSuccessSnackBar(context,'Cover picture removed');
   }
 }
 

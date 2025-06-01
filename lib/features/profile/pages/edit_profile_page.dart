@@ -125,13 +125,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
             }
 
             if (state.isSuccess) {
-              context.showSuccessSnackBar('Profile updated successfully');
+              context.showSuccessSnackBar(
+                  context, 'Profile updated successfully');
               setState(() => _hasUnsavedChanges = false);
             }
 
             if (state.hasError) {
               context.showErrorSnackBar(
-                  state.errorMessage ?? 'Failed to update profile');
+                  context, state.errorMessage ?? 'Failed to update profile');
             }
           },
           builder: (context, state) {

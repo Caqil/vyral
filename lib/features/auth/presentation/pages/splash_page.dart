@@ -1,4 +1,3 @@
-// lib/features/auth/presentation/pages/splash_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +5,6 @@ import 'package:vyral/features/auth/presentation/bloc/auth_state.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../bloc/auth_bloc.dart';
-import '../bloc/auth_event.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -19,12 +17,13 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  bool _hasNavigated = false;
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    _checkAuthenticationStatus();
+    // The AuthBloc will automatically check auth status when created
   }
 
   void _setupAnimations() {
@@ -52,10 +51,26 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     _animationController.forward();
   }
 
-  void _checkAuthenticationStatus() {
-    // Add a small delay for better UX
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      context.read<AuthBloc>().add(const AuthCheckRequested());
+  void _navigateBasedOnAuth(AuthStatus status) {
+    if (_hasNavigated) return;
+
+    _hasNavigated = true;
+
+    // Add a minimum delay for better UX
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      if (!mounted) return;
+
+      switch (status) {
+        case AuthStatus.authenticated:
+          context.go(RouteNames.home);
+          break;
+        case AuthStatus.unauthenticated:
+          context.go(RouteNames.login);
+          break;
+        default:
+          // Still loading or error, stay on splash
+          break;
+      }
     });
   }
 
@@ -72,10 +87,11 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state.status == AuthStatus.authenticated) {
-          context.go(RouteNames.feed);
-        } else if (state.status == AuthStatus.unauthenticated) {
-          context.go(RouteNames.login);
+        print('Splash: Auth status changed to ${state.status}'); // Debug log
+
+        if (state.status == AuthStatus.authenticated ||
+            state.status == AuthStatus.unauthenticated) {
+          _navigateBasedOnAuth(state.status);
         }
       },
       child: Scaffold(
@@ -144,6 +160,36 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                   child: LoadingWidget(
                     color: colorScheme.onPrimary,
                   ),
+                ),
+                const SizedBox(height: 16),
+                BlocBuilder<AuthBloc, AuthState>(
+                  builder: (context, state) {
+                    String statusText = 'Checking authentication...';
+
+                    switch (state.status) {
+                      case AuthStatus.loading:
+                        statusText = 'Checking authentication...';
+                        break;
+                      case AuthStatus.authenticated:
+                        statusText = 'Welcome back!';
+                        break;
+                      case AuthStatus.unauthenticated:
+                        statusText = 'Redirecting to login...';
+                        break;
+                      default:
+                        statusText = 'Loading...';
+                    }
+
+                    return FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Text(
+                        statusText,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onPrimary.withOpacity(0.7),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

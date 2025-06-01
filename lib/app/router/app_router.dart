@@ -1,3 +1,4 @@
+// Updated App Router - lib/app/router/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,12 +23,12 @@ class AppRouter {
 
   static late final GoRouter _router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: RouteNames.home,
+    initialLocation: RouteNames.splash, // Always start with splash
     debugLogDiagnostics: true,
     redirect: _redirect,
     errorBuilder: (context, state) => _buildErrorPage(context, state),
     routes: [
-      // Splash route (outside shell)
+      // Splash route (always accessible)
       GoRoute(
         path: RouteNames.splash,
         name: 'splash',
@@ -202,7 +203,7 @@ class AppRouter {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => context.go(RouteNames.home),
+                onPressed: () => context.go(RouteNames.splash),
                 child: const Text('Go to Home'),
               ),
             ],
@@ -213,9 +214,20 @@ class AppRouter {
   }
 
   static String? _redirect(BuildContext context, GoRouterState state) {
+    final currentLocation = state.uri.toString();
+
+    print('Router redirect: Current location = $currentLocation'); // Debug log
+
+    // Always allow splash page
+    if (currentLocation == RouteNames.splash) {
+      return null;
+    }
+
+    // Get auth state - but don't redirect if we're still loading
     final authBloc = context.read<AuthBloc>();
     final authState = authBloc.state;
-    final currentLocation = state.uri.toString();
+
+    print('Router redirect: Auth status = ${authState.status}'); // Debug log
 
     // Define auth routes
     const authRoutes = [
@@ -226,13 +238,14 @@ class AppRouter {
       RouteNames.verifyEmail,
     ];
 
-    // Don't redirect if we're on splash page during initial load
-    if (currentLocation == RouteNames.splash) {
-      return null;
+    // If auth state is still initial or loading, redirect to splash
+    if (authState.status == AuthStatus.initial ||
+        authState.status == AuthStatus.loading) {
+      return RouteNames.splash;
     }
 
     // If user is authenticated
-    if (authState.isAuthenticated) {
+    if (authState.status == AuthStatus.authenticated) {
       // Redirect to home if trying to access auth pages
       if (authRoutes.contains(currentLocation)) {
         return RouteNames.home;
@@ -241,7 +254,7 @@ class AppRouter {
     }
 
     // If user is not authenticated
-    if (!authState.isAuthenticated && authState.status != AuthStatus.initial) {
+    if (authState.status == AuthStatus.unauthenticated) {
       // Allow access to auth pages and public profile pages
       if (authRoutes.contains(currentLocation) ||
           currentLocation.startsWith('/profile/') ||
@@ -304,8 +317,8 @@ class _MainShellState extends State<MainShell> {
     ),
     NavigationItem(
       item: const BottomNavigationBarItem(
-        icon: Icon(Icons.chat_bubble_outline),
-        activeIcon: Icon(Icons.chat_bubble),
+        icon: Icon(Icons.person_outline),
+        activeIcon: Icon(Icons.person),
         label: 'Profile',
       ),
       route: RouteNames.profile,
@@ -339,7 +352,6 @@ class _MainShellState extends State<MainShell> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Navigate to create post or show options
           _showCreateOptions(context);
         },
         child: const Icon(Icons.add),

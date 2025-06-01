@@ -149,6 +149,17 @@ class SocialNetworkApp extends StatelessWidget {
     return _postsRepository!;
   }
 
+  // Helper method to get current user ID
+  static String getCurrentUserId(BuildContext context) {
+    try {
+      final authBloc = context.read<AuthBloc>();
+      return authBloc.state.user?.id ?? 'current_user_id';
+    } catch (e) {
+      // Fallback if context is not available or AuthBloc is not found
+      return 'current_user_id';
+    }
+  }
+
   // Profile Use Cases
   static GetUserProfileUseCase getUserProfileUseCase() =>
       GetUserProfileUseCase(profileRepository);
