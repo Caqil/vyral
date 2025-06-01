@@ -124,21 +124,47 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, AuthEntity>> refreshToken(String refreshToken) async {
     try {
       final request = RefreshTokenRequestModel(refreshToken: refreshToken);
+
+      // Get existing user data before refresh
+      final existingUser = await localDataSource.getCurrentUser();
+
       final authResponse = await remoteDataSource.refreshToken(request);
 
-      // Convert UserEntity to UserModel for storage
-      final userModel = authResponse.user is UserModel
-          ? authResponse.user as UserModel
-          : UserModel.fromEntity(authResponse.user);
+      // If the refresh response doesn't have valid user data (empty or minimal),
+      // use the existing user data
+      UserModel userToSave;
+      if (existingUser != null &&
+          (authResponse.user.id.isEmpty ||
+              authResponse.user.username.isEmpty)) {
+        // Use existing user data with new tokens
+        userToSave = existingUser;
 
-      // Update auth data locally
-      await localDataSource.saveAuthData(
-        accessToken: authResponse.accessToken,
-        refreshToken: authResponse.refreshToken,
-        user: userModel,
-      );
+        // Create a new auth response with the existing user data
+        final updatedAuthResponse = authResponse.copyWithUser(existingUser);
 
-      return Right(authResponse);
+        // Save auth data locally
+        await localDataSource.saveAuthData(
+          accessToken: updatedAuthResponse.accessToken,
+          refreshToken: updatedAuthResponse.refreshToken,
+          user: userToSave,
+        );
+
+        return Right(updatedAuthResponse);
+      } else {
+        // The refresh response has valid user data, use it
+        userToSave = authResponse.user is UserModel
+            ? authResponse.user as UserModel
+            : UserModel.fromEntity(authResponse.user);
+
+        // Save auth data locally
+        await localDataSource.saveAuthData(
+          accessToken: authResponse.accessToken,
+          refreshToken: authResponse.refreshToken,
+          user: userToSave,
+        );
+
+        return Right(authResponse);
+      }
     } on AuthException catch (e) {
       return Left(AuthFailure(message: e.message, type: e.type));
     } on ServerException catch (e) {
@@ -146,6 +172,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
+      print('RefreshToken Error: $e'); // Debug log
       return Left(ServerFailure(message: 'An unexpected error occurred: $e'));
     }
   }

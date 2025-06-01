@@ -56,34 +56,44 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthCheckRequested event,
     Emitter<AuthState> emit,
   ) async {
-    if (emit.isDone) return; // Safety check
+    if (emit.isDone) return;
 
+    print('🔍 Auth Check: Starting authentication check...');
     emit(state.copyWith(status: AuthStatus.loading));
 
     try {
-      // First check if we have stored credentials
+      // Check if we have stored credentials
       final isAuthenticated = await authRepository.isAuthenticated();
+      print('🔍 Auth Check: Has stored credentials: $isAuthenticated');
 
       if (!isAuthenticated) {
+        print('❌ Auth Check: No stored credentials found');
         if (!emit.isDone) {
           emit(state.copyWith(status: AuthStatus.unauthenticated));
         }
         return;
       }
 
+      // Check if we have access token
+      final accessToken = await authRepository.getAccessToken();
+      final refreshToken = await authRepository.getRefreshToken();
+      print('🔍 Auth Check: Access token exists: ${accessToken != null}');
+      print('🔍 Auth Check: Refresh token exists: ${refreshToken != null}');
+
       // Get stored user data
       final userResult = await authRepository.getCurrentUser();
 
       await userResult.fold(
         (failure) async {
-          // If we can't get user data, try to refresh token
+          print('❌ Auth Check: Failed to get user data: ${failure.message}');
           await _attemptTokenRefresh(emit);
         },
         (user) async {
           if (user != null) {
-            // User data found, validate session by refreshing token
+            print('✅ Auth Check: User data found: ${user.username}');
             await _validateAndSetAuthState(user, emit);
           } else {
+            print('❌ Auth Check: No user data found');
             if (!emit.isDone) {
               emit(state.copyWith(status: AuthStatus.unauthenticated));
             }
@@ -91,10 +101,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         },
       );
     } catch (e) {
+      print('💥 Auth Check: Exception occurred: $e');
       if (!emit.isDone) {
         emit(state.copyWith(
           status: AuthStatus.unauthenticated,
-          errorMessage: 'Failed to check authentication status',
+          errorMessage: 'Failed to check authentication status: $e',
         ));
       }
     }
@@ -105,24 +116,37 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (emit.isDone) return; // Safety check
 
     try {
+      print(
+          '🔍 Token Validation: Starting validation for user: ${user?.id ?? 'null'}');
+
       // Try to refresh token to validate current session
       final refreshToken = await authRepository.getRefreshToken();
+      print(
+          '🔑 Token Validation: Got refresh token: ${refreshToken != null ? 'yes' : 'no'}');
 
       if (refreshToken != null) {
+        print('🔄 Token Validation: Attempting token refresh...');
         final refreshResult = await refreshTokenUseCase(refreshToken);
 
         if (emit.isDone) return; // Check before emitting
 
         refreshResult.fold(
           (failure) {
+            print(
+                '❌ Token Validation: Token refresh failed: ${failure.message}');
             // Token refresh failed, logout user
             if (!emit.isDone) {
               emit(state.copyWith(status: AuthStatus.unauthenticated));
             }
             // Clear auth data without awaiting to avoid blocking
+            print(
+                '🧹 Token Validation: Clearing auth data due to refresh failure');
             authRepository.clearAuthData();
           },
           (authEntity) {
+            print('✅ Token Validation: Token refresh successful');
+            print(
+                '👤 Token Validation: User data - ID: ${authEntity.user.id}, Username: ${authEntity.user.username}');
             // Token refresh successful, user is authenticated
             if (!emit.isDone) {
               emit(state.copyWith(
@@ -133,6 +157,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           },
         );
       } else {
+        print('❌ Token Validation: No refresh token found');
         // No refresh token, user needs to login again
         if (!emit.isDone) {
           emit(state.copyWith(status: AuthStatus.unauthenticated));
@@ -140,6 +165,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         authRepository.clearAuthData();
       }
     } catch (e) {
+      print('💥 Token Validation: Exception during validation: $e');
       // If refresh fails, assume user needs to login again
       if (!emit.isDone) {
         emit(state.copyWith(status: AuthStatus.unauthenticated));
@@ -149,22 +175,28 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _attemptTokenRefresh(Emitter<AuthState> emit) async {
-    if (emit.isDone) return; // Safety check
+    if (emit.isDone) return;
+
+    print('🔄 Token Refresh: Attempting emergency token refresh...');
 
     final refreshToken = await authRepository.getRefreshToken();
 
     if (refreshToken != null) {
+      print('🔄 Token Refresh: Found refresh token, attempting refresh...');
       final result = await refreshTokenUseCase(refreshToken);
 
-      if (emit.isDone) return; // Check before emitting
+      if (emit.isDone) return;
 
       result.fold(
         (failure) {
+          print(
+              '❌ Token Refresh: Emergency refresh failed: ${failure.message}');
           if (!emit.isDone) {
             emit(state.copyWith(status: AuthStatus.unauthenticated));
           }
         },
         (authEntity) {
+          print('✅ Token Refresh: Emergency refresh successful');
           if (!emit.isDone) {
             emit(state.copyWith(
               status: AuthStatus.authenticated,
@@ -174,6 +206,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         },
       );
     } else {
+      print('❌ Token Refresh: No refresh token for emergency refresh');
       if (!emit.isDone) {
         emit(state.copyWith(status: AuthStatus.unauthenticated));
       }

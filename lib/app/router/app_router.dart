@@ -10,6 +10,9 @@ import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/verify_email_page.dart';
+import '../../features/profile/pages/profile_page.dart';
+import '../../features/profile/presentation/bloc/profile_bloc.dart';
+import '../../main.dart'; // For dependency injection
 import 'route_names.dart';
 import 'profile_routes.dart';
 
@@ -164,6 +167,37 @@ class AppRouter {
               ),
             ],
           ),
+
+          // Current user profile route (inside shell)
+          GoRoute(
+            path: RouteNames.profile,
+            name: 'current-user-profile',
+            builder: (context, state) {
+              // Get current user ID from AuthBloc
+              final authBloc = context.read<AuthBloc>();
+              final currentUserId = authBloc.state.user?.id;
+
+              if (currentUserId == null) {
+                // If no current user, redirect to login
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  context.go(RouteNames.login);
+                });
+                return const Scaffold(
+                  body: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+
+              return BlocProvider(
+                create: (context) => _createProfileBloc(),
+                child: ProfilePage(
+                  userId: currentUserId,
+                  username: authBloc.state.user?.username,
+                ),
+              );
+            },
+          ),
         ],
       ),
     ],
@@ -203,7 +237,7 @@ class AppRouter {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => context.go(RouteNames.splash),
+                onPressed: () => context.go(RouteNames.home),
                 child: const Text('Go to Home'),
               ),
             ],
@@ -267,6 +301,19 @@ class AppRouter {
     }
 
     return null;
+  }
+
+  // Dependency injection helper
+  static ProfileBloc _createProfileBloc() {
+    return ProfileBloc(
+      getUserProfile: SocialNetworkApp.getUserProfileUseCase(),
+      getUserPosts: SocialNetworkApp.getUserPostsUseCase(),
+      getUserMedia: SocialNetworkApp.getUserMediaUseCase(),
+      followUser: SocialNetworkApp.getFollowUserUseCase(),
+      unfollowUser: SocialNetworkApp.getUnfollowUserUseCase(),
+      getFollowStatus: SocialNetworkApp.getFollowStatusUseCase(),
+      getUserStats: SocialNetworkApp.getUserStatsUseCase(),
+    );
   }
 }
 

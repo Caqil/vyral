@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -151,8 +150,7 @@ class _ProfilePageState extends State<ProfilePage>
                                       if (state.user?.username != null)
                                         Text(
                                           '@${state.user!.username}',
-                                          style:
-                                              theme.textTheme.muted.copyWith(
+                                          style: theme.textTheme.muted.copyWith(
                                             color: colorScheme.mutedForeground,
                                           ),
                                           maxLines: 1,
@@ -194,7 +192,7 @@ class _ProfilePageState extends State<ProfilePage>
         const SizedBox(width: 8),
         ShadButton.ghost(
           onPressed: () => _showProfileOptions(state.user),
-          child:  Icon(LucideIcons.menu),
+          child: Icon(LucideIcons.menu),
         ),
       ],
     );
@@ -213,6 +211,7 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     if (state.hasError && state.user == null) {
+      print(state.errorMessage);
       return SizedBox(
         height: 400,
         child: CustomErrorWidget(

@@ -74,6 +74,8 @@ class UserModel extends UserEntity {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     try {
+      print('👤 UserModel.fromJson: Parsing user data: ${json.keys.toList()}');
+
       return UserModel(
         id: json['id']?.toString() ?? '',
         username: json['username']?.toString() ?? '',
@@ -96,18 +98,31 @@ class UserModel extends UserEntity {
             : null,
         isVerified: json['is_verified'] == true,
         isPrivate: json['is_private'] == true,
-        followersCount: (json['followers_count'] as num?)?.toInt() ?? 0,
-        followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
-        postsCount: (json['posts_count'] as num?)?.toInt() ?? 0,
-        friendsCount: (json['friends_count'] as num?)?.toInt() ?? 0,
+        followersCount: _parseIntSafely(json['followers_count'], 0),
+        followingCount: _parseIntSafely(json['following_count'], 0),
+        postsCount: _parseIntSafely(json['posts_count'], 0),
+        friendsCount: _parseIntSafely(json['friends_count'], 0),
         isPremium: json['is_premium'] == true,
         createdAt: json['created_at'] != null
-            ? DateTime.parse(json['created_at'].toString())
+            ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
             : DateTime.now(),
       );
     } catch (e) {
+      print('❌ UserModel.fromJson: Error parsing user data: $e');
+      print('📄 UserModel.fromJson: JSON data: $json');
       throw Exception('Failed to parse user data: $e');
     }
+  }
+
+  static int _parseIntSafely(dynamic value, int defaultValue) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      return parsed ?? defaultValue;
+    }
+    return defaultValue;
   }
 
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
