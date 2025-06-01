@@ -59,7 +59,6 @@ class _LoginFormState extends State<LoginForm> {
             label: 'Email or Username',
             placeholder: Text('Enter your email or username'),
             keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
             prefix: const Icon(Icons.person_outline),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -77,10 +76,9 @@ class _LoginFormState extends State<LoginForm> {
             label: 'Password',
             placeholder: Text('Enter your password'),
             obscureText: true,
-            textInputAction: TextInputAction.done,
             prefix: const Icon(Icons.lock_outline),
             validator: Validators.validateRequired,
-            onSubmitted: (_) => _handleSubmit(),
+            onTap: () => _handleSubmit(),
           ),
 
           const SizedBox(height: 16),

@@ -107,8 +107,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     keyboardType: TextInputType.emailAddress,
                     prefix: const Icon(Icons.email_outlined),
                     validator: Validators.validateEmail,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _handleSubmit(),
+                   onTap: () => _handleSubmit(),
                   ),
 
                   const SizedBox(height: 32),

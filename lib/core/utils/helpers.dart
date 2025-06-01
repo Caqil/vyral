@@ -1,201 +1,124 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'dart:async';
-import 'dart:math' as math;
 
 class Helpers {
-  /// Generate random string
-  static String generateRandomString(int length) {
-    const chars =
-        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return String.fromCharCodes(
-      Iterable.generate(
-          length, (_) => chars.codeUnitAt(math.Random().nextInt(chars.length))),
-    );
-  }
-
-  /// Format file size
-  static String formatFileSize(int bytes) {
-    if (bytes <= 0) return '0 B';
-
-    const suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    int i = (math.log(bytes) / math.log(1024)).floor();
-
-    return '${(bytes / math.pow(1024, i)).toStringAsFixed(1)} ${suffixes[i]}';
-  }
-
-  /// Format number with commas
-  static String formatNumber(num number) {
-    if (number >= 1000000000) {
-      return '${(number / 1000000000).toStringAsFixed(1)}B';
-    } else if (number >= 1000000) {
-      return '${(number / 1000000).toStringAsFixed(1)}M';
+  static String formatNumber(int number) {
+    if (number >= 1000000) {
+      final millions = number / 1000000;
+      return '${_formatDecimal(millions)}M';
     } else if (number >= 1000) {
-      return '${(number / 1000).toStringAsFixed(1)}K';
+      final thousands = number / 1000;
+      return '${_formatDecimal(thousands)}K';
     } else {
       return number.toString();
     }
   }
 
-  /// Copy text to clipboard
-  static Future<void> copyToClipboard(String text) async {
-    await Clipboard.setData(ClipboardData(text: text));
-  }
-
-  /// Get random color
-  static Color getRandomColor() {
-    return Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
-        .withOpacity(1.0);
-  }
-
-  /// Get avatar color based on name
-  static Color getAvatarColor(String name) {
-    final colors = [
-      Colors.red,
-      Colors.pink,
-      Colors.purple,
-      Colors.deepPurple,
-      Colors.indigo,
-      Colors.blue,
-      Colors.lightBlue,
-      Colors.cyan,
-      Colors.teal,
-      Colors.green,
-      Colors.lightGreen,
-      Colors.lime,
-      Colors.yellow,
-      Colors.amber,
-      Colors.orange,
-      Colors.deepOrange,
-    ];
-
-    int hash = 0;
-    for (int i = 0; i < name.length; i++) {
-      hash = name.codeUnitAt(i) + ((hash << 5) - hash);
-    }
-
-    return colors[hash.abs() % colors.length];
-  }
-
-  /// Get initials from name
-  static String getInitials(String name) {
-    if (name.isEmpty) return '';
-
-    final words = name.trim().split(' ');
-    if (words.length == 1) {
-      return words[0].substring(0, math.min(2, words[0].length)).toUpperCase();
+  static String _formatDecimal(double value) {
+    if (value == value.roundToDouble()) {
+      return value.round().toString();
     } else {
-      return (words[0].substring(0, 1) + words[1].substring(0, 1))
-          .toUpperCase();
+      return value.toStringAsFixed(1);
     }
   }
 
-  /// Check if color is dark
-  static bool isColorDark(Color color) {
-    final double relativeLuminance = color.computeLuminance();
-    return relativeLuminance < 0.5;
+  static String formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+
+    if (hours > 0) {
+      return '${hours}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    } else {
+      return '${minutes}:${seconds.toString().padLeft(2, '0')}';
+    }
   }
 
-  /// Get contrasting text color
-  static Color getContrastingTextColor(Color backgroundColor) {
-    return isColorDark(backgroundColor) ? Colors.white : Colors.black;
+  static String formatFileSize(int bytes) {
+    if (bytes >= 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+    } else if (bytes >= 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    } else if (bytes >= 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    } else {
+      return '$bytes B';
+    }
   }
 
-  /// Debounce function calls
-  static Timer? _debounceTimer;
-  static void debounce(VoidCallback callback,
-      {Duration delay = const Duration(milliseconds: 500)}) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(delay, callback);
+  static Color generateColorFromString(String text) {
+    final hash = text.hashCode;
+    final hue = (hash % 360).toDouble();
+    return HSVColor.fromAHSV(1.0, hue, 0.6, 0.8).toColor();
   }
 
-  /// Show confirmation dialog
-  static Future<bool?> showConfirmationDialog(
-    BuildContext context, {
-    required String title,
-    required String content,
-    String confirmText = 'Confirm',
-    String cancelText = 'Cancel',
-    bool isDangerous = false,
-  }) async {
-    return showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(content),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(cancelText),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: isDangerous
-                  ? TextButton.styleFrom(foregroundColor: Colors.red)
-                  : null,
-              child: Text(confirmText),
-            ),
-          ],
-        );
-      },
-    );
+  static String generateUsername(String firstName, String lastName) {
+    final base = '${firstName.toLowerCase()}${lastName.toLowerCase()}';
+    final random = DateTime.now().millisecondsSinceEpoch % 1000;
+    return '${base}_$random';
   }
 
-  /// Show loading dialog
-  static void showLoadingDialog(BuildContext context, {String? message}) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              if (message != null) ...[
-                const SizedBox(height: 16),
-                Text(message),
-              ],
-            ],
-          ),
-        );
-      },
-    );
+  static bool isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
-  /// Hide loading dialog
-  static void hideLoadingDialog(BuildContext context) {
-    Navigator.of(context).pop();
+  static bool isYesterday(DateTime date) {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    return date.year == yesterday.year &&
+        date.month == yesterday.month &&
+        date.day == yesterday.day;
   }
 
-  /// Validate and format phone number
-  static String formatPhoneNumber(String phone) {
-    // Remove all non-digit characters
-    String digits = phone.replaceAll(RegExp(r'\D'), '');
+  static String getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good morning';
+    } else if (hour < 17) {
+      return 'Good afternoon';
+    } else {
+      return 'Good evening';
+    }
+  }
 
-    // Format based on length
-    if (digits.length == 10) {
-      return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}';
-    } else if (digits.length == 11 && digits.startsWith('1')) {
-      return '+1 (${digits.substring(1, 4)}) ${digits.substring(4, 7)}-${digits.substring(7)}';
+  static List<T> paginate<T>(List<T> items, int page, int pageSize) {
+    final startIndex = page * pageSize;
+    final endIndex = (startIndex + pageSize).clamp(0, items.length);
+
+    if (startIndex >= items.length) {
+      return [];
     }
 
-    return phone; // Return original if can't format
+    return items.sublist(startIndex, endIndex);
   }
 
-  /// Generate gradient colors
-  static LinearGradient generateGradient(Color baseColor) {
-    final hsl = HSLColor.fromColor(baseColor);
-    final lighterColor =
-        hsl.withLightness(math.min(1.0, hsl.lightness + 0.2)).toColor();
-    final darkerColor =
-        hsl.withLightness(math.max(0.0, hsl.lightness - 0.2)).toColor();
+  static String obfuscateEmail(String email) {
+    final parts = email.split('@');
+    if (parts.length != 2) return email;
 
-    return LinearGradient(
-      colors: [lighterColor, darkerColor],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
+    final localPart = parts[0];
+    final domain = parts[1];
+
+    if (localPart.length <= 2) {
+      return email; // Don't obfuscate very short emails
+    }
+
+    final obfuscatedLocal =
+        '${localPart[0]}${'*' * (localPart.length - 2)}${localPart[localPart.length - 1]}';
+    return '$obfuscatedLocal@$domain';
+  }
+
+  static String obfuscatePhone(String phone) {
+    if (phone.length <= 4) return phone;
+
+    final visibleDigits = 2;
+    final start = phone.substring(0, visibleDigits);
+    final end = phone.substring(phone.length - visibleDigits);
+    final middle = '*' * (phone.length - visibleDigits * 2);
+
+    return '$start$middle$end';
   }
 }

@@ -4,6 +4,7 @@ class CustomErrorWidget extends StatelessWidget {
   final String? title;
   final String message;
   final VoidCallback? onRetry;
+  final String? retryText;
   final IconData? icon;
 
   const CustomErrorWidget({
@@ -11,31 +12,31 @@ class CustomErrorWidget extends StatelessWidget {
     this.title,
     required this.message,
     this.onRetry,
+    this.retryText,
     this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon ?? Icons.error_outline,
               size: 64,
-              color: colorScheme.error,
+              color: theme.colorScheme.error,
             ),
             const SizedBox(height: 16),
             if (title != null) ...[
               Text(
                 title!,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: colorScheme.onSurface,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: theme.colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -43,17 +44,16 @@ class CustomErrorWidget extends StatelessWidget {
             ],
             Text(
               message,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 24),
-              ElevatedButton.icon(
+              ElevatedButton(
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                child: Text(retryText ?? 'Retry'),
               ),
             ],
           ],

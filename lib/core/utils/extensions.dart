@@ -1,164 +1,177 @@
+// lib/core/utils/extensions.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+
+extension BuildContextExtensions on BuildContext {
+  // Theme extensions
+  ShadColorScheme get colorScheme => ShadTheme.of(this).colorScheme;
+  ShadThemeData get shadTheme => ShadTheme.of(this);
+  
+  // Navigation extensions
+  void showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(this).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(this).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void showInfoSnackBar(String message) {
+    ScaffoldMessenger.of(this).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.info, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.blue,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+}
 
 extension StringExtensions on String {
-  /// Capitalize first letter of string
   String get capitalize {
     if (isEmpty) return this;
-    return '${this[0].toUpperCase()}${substring(1).toLowerCase()}';
+    return this[0].toUpperCase() + substring(1).toLowerCase();
   }
 
-  /// Capitalize first letter of each word
   String get capitalizeWords {
     if (isEmpty) return this;
-    return split(' ').map((word) => word.capitalize).join(' ');
+    return split(' ')
+        .map((word) => word.isNotEmpty ? word.capitalize : word)
+        .join(' ');
   }
 
-  /// Check if string is a valid email
+  String get initials {
+    if (isEmpty) return '';
+    final words = trim().split(RegExp(r'\s+'));
+    if (words.length == 1) {
+      return words[0].substring(0, 1).toUpperCase();
+    }
+    return words.take(2).map((word) => word[0].toUpperCase()).join();
+  }
+
   bool get isValidEmail {
-    return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-        .hasMatch(this);
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(this);
   }
 
-  /// Check if string is a valid phone number
   bool get isValidPhone {
-    return RegExp(r'^\+?[1-9]\d{1,14}$')
-        .hasMatch(replaceAll(RegExp(r'[\s\-\(\)]'), ''));
+    return RegExp(r'^\+?[\d\s\-\(\)]{10,}$').hasMatch(this);
   }
 
-  /// Check if string is a valid URL
   bool get isValidUrl {
-    return RegExp(
-            r'^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$')
-        .hasMatch(this);
-  }
-
-  /// Remove all whitespace
-  String get removeWhitespace => replaceAll(RegExp(r'\s+'), '');
-
-  /// Check if string contains only numeric characters
-  bool get isNumeric => RegExp(r'^\d+$').hasMatch(this);
-
-  /// Truncate string to specified length
-  String truncate(int length, {String suffix = '...'}) {
-    if (this.length <= length) return this;
-    return '${substring(0, length)}$suffix';
-  }
-
-  /// Convert to slug format (lowercase, hyphens instead of spaces)
-  String get toSlug {
-    return toLowerCase()
-        .replaceAll(RegExp(r'[^\w\s-]'), '')
-        .replaceAll(RegExp(r'\s+'), '-');
+    try {
+      final uri = Uri.parse(this);
+      return uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https');
+    } catch (e) {
+      return false;
+    }
   }
 }
 
 extension DateTimeExtensions on DateTime {
-  /// Format date as relative time (e.g., "2 hours ago")
   String get timeAgo {
     final now = DateTime.now();
     final difference = now.difference(this);
 
     if (difference.inDays > 365) {
       final years = (difference.inDays / 365).floor();
-      return '$years ${years == 1 ? 'year' : 'years'} ago';
+      return '${years}y';
     } else if (difference.inDays > 30) {
       final months = (difference.inDays / 30).floor();
-      return '$months ${months == 1 ? 'month' : 'months'} ago';
+      return '${months}mo';
     } else if (difference.inDays > 0) {
-      return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
+      return '${difference.inDays}d';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+      return '${difference.inHours}h';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+      return '${difference.inMinutes}m';
     } else {
-      return 'Just now';
+      return 'now';
     }
   }
 
-  /// Format date for display
-  String get displayDate => DateFormat('MMM dd, yyyy').format(this);
-
-  /// Format time for display
-  String get displayTime => DateFormat('hh:mm a').format(this);
-
-  /// Format date and time for display
-  String get displayDateTime => DateFormat('MMM dd, yyyy hh:mm a').format(this);
-
-  /// Check if date is today
-  bool get isToday {
+  String get displayDate {
     final now = DateTime.now();
-    return year == now.year && month == now.month && day == now.day;
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final dateToCheck = DateTime(year, month, day);
+
+    if (dateToCheck == today) {
+      return 'Today';
+    } else if (dateToCheck == yesterday) {
+      return 'Yesterday';
+    } else if (now.difference(this).inDays < 7) {
+      return _formatWeekday();
+    } else if (year == now.year) {
+      return _formatMonthDay();
+    } else {
+      return _formatFullDate();
+    }
   }
 
-  /// Check if date is yesterday
-  bool get isYesterday {
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    return year == yesterday.year &&
-        month == yesterday.month &&
-        day == yesterday.day;
+  String _formatWeekday() {
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return weekdays[weekday - 1];
   }
 
-  /// Check if date is this week
-  bool get isThisWeek {
-    final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    final endOfWeek = startOfWeek.add(const Duration(days: 6));
-    return isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
-        isBefore(endOfWeek.add(const Duration(days: 1)));
+  String _formatMonthDay() {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[month - 1]} $day';
+  }
+
+  String _formatFullDate() {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[month - 1]} $day, $year';
   }
 }
 
-extension ContextExtensions on BuildContext {
-  /// Get theme data
-  ThemeData get theme => Theme.of(this);
-
-  /// Get color scheme
-  ColorScheme get colorScheme => theme.colorScheme;
-
-  /// Get text theme
-  TextTheme get textTheme => theme.textTheme;
-
-  /// Get media query
-  MediaQueryData get mediaQuery => MediaQuery.of(this);
-
-  /// Get screen size
-  Size get screenSize => mediaQuery.size;
-
-  /// Get screen width
-  double get screenWidth => screenSize.width;
-
-  /// Get screen height
-  double get screenHeight => screenSize.height;
-
-  /// Check if device is mobile
-  bool get isMobile => screenWidth < 600;
-
-  /// Check if device is tablet
-  bool get isTablet => screenWidth >= 600 && screenWidth < 1024;
-
-  /// Check if device is desktop
-  bool get isDesktop => screenWidth >= 1024;
-
-  /// Show snackbar
-  void showSnackBar(String message,
-      {Color? backgroundColor, Duration? duration}) {
-    ScaffoldMessenger.of(this).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-        duration: duration ?? const Duration(seconds: 4),
-      ),
-    );
+extension ListExtensions<T> on List<T> {
+  List<T> get unique {
+    return toSet().toList();
   }
 
-  /// Show error snackbar
-  void showErrorSnackBar(String message) {
-    showSnackBar(message, backgroundColor: colorScheme.error);
+  T? get firstOrNull {
+    return isEmpty ? null : first;
   }
 
-  /// Show success snackbar
-  void showSuccessSnackBar(String message) {
-    showSnackBar(message, backgroundColor: Colors.green);
+  T? get lastOrNull {
+    return isEmpty ? null : last;
   }
 }
+
+

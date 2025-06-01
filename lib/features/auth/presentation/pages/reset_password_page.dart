@@ -119,7 +119,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     obscureText: true,
                     prefix: const Icon(Icons.lock_outline),
                     validator: Validators.validatePassword,
-                    textInputAction: TextInputAction.next,
                   ),
 
                   const SizedBox(height: 16),
@@ -135,8 +134,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       _passwordController.text,
                       value,
                     ),
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _handleSubmit(),
+                    onTap: () => _handleSubmit(),
                   ),
 
                   const SizedBox(height: 32),

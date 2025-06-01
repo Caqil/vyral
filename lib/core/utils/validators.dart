@@ -1,122 +1,40 @@
-// lib/core/utils/validators.dart
+
+import 'package:vyral/core/utils/extensions.dart';
+
 class Validators {
-  // Email validation
-  static String? validateEmail(String? email) {
-    if (email == null || email.isEmpty) {
+  static String? validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
       return 'Email is required';
     }
-
-    final emailRegex =
-        RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-    if (!emailRegex.hasMatch(email)) {
+    if (!value.isValidEmail) {
       return 'Please enter a valid email address';
     }
-
     return null;
   }
 
-  // Password validation
-  static String? validatePassword(String? password) {
-    if (password == null || password.isEmpty) {
+  static String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
       return 'Password is required';
     }
-
-    if (password.length < 8) {
+    if (value.length < 8) {
       return 'Password must be at least 8 characters long';
     }
-
-    if (!password.contains(RegExp(r'[A-Z]'))) {
-      return 'Password must contain at least one uppercase letter';
+    if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)').hasMatch(value)) {
+      return 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
     }
-
-    if (!password.contains(RegExp(r'[a-z]'))) {
-      return 'Password must contain at least one lowercase letter';
-    }
-
-    if (!password.contains(RegExp(r'[0-9]'))) {
-      return 'Password must contain at least one number';
-    }
-
-    if (!password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
-      return 'Password must contain at least one special character';
-    }
-
     return null;
   }
 
-  // Confirm password validation
-  static String? validateConfirmPassword(
-      String? password, String? confirmPassword) {
-    if (confirmPassword == null || confirmPassword.isEmpty) {
+  static String? validateConfirmPassword(String? value, String? password) {
+    if (value == null || value.isEmpty) {
       return 'Please confirm your password';
     }
-
-    if (password != confirmPassword) {
+    if (value != password) {
       return 'Passwords do not match';
     }
-
     return null;
   }
 
-  // Username validation
-  static String? validateUsername(String? username) {
-    if (username == null || username.isEmpty) {
-      return 'Username is required';
-    }
-
-    if (username.length < 3) {
-      return 'Username must be at least 3 characters long';
-    }
-
-    if (username.length > 30) {
-      return 'Username must be less than 30 characters';
-    }
-
-    final usernameRegex = RegExp(r'^[a-zA-Z0-9_.-]+$');
-    if (!usernameRegex.hasMatch(username)) {
-      return 'Username can only contain letters, numbers, dots, hyphens, and underscores';
-    }
-
-    return null;
-  }
-
-  // Name validation
-  static String? validateName(String? name, {String fieldName = 'Name'}) {
-    if (name == null || name.isEmpty) {
-      return '$fieldName is required';
-    }
-
-    if (name.length < 2) {
-      return '$fieldName must be at least 2 characters long';
-    }
-
-    if (name.length > 50) {
-      return '$fieldName must be less than 50 characters';
-    }
-
-    final nameRegex = RegExp(r'^[a-zA-Z0-9_.-]+$');
-    if (!nameRegex.hasMatch(name)) {
-      return '$fieldName can only contain letters, spaces, hyphens, and apostrophes';
-    }
-
-    return null;
-  }
-
-  // Phone validation
-  static String? validatePhone(String? phone) {
-    if (phone == null || phone.isEmpty) {
-      return null; // Phone is optional
-    }
-
-    final phoneRegex = RegExp(r'^\+?[1-9]\d{1,14}$');
-    if (!phoneRegex.hasMatch(phone.replaceAll(RegExp(r'[\s\-\(\)]'), ''))) {
-      return 'Please enter a valid phone number';
-    }
-
-    return null;
-  }
-
-  // Required field validation
   static String? validateRequired(String? value, {String fieldName = 'Field'}) {
     if (value == null || value.trim().isEmpty) {
       return '$fieldName is required';
@@ -124,75 +42,98 @@ class Validators {
     return null;
   }
 
-  // Minimum length validation
-  static String? validateMinLength(String? value, int minLength,
-      {String fieldName = 'Field'}) {
-    if (value == null || value.length < minLength) {
-      return '$fieldName must be at least $minLength characters long';
+  static String? validateName(String? value, {String fieldName = 'Name'}) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // Name fields are often optional
+    }
+    if (value.trim().length < 2) {
+      return '$fieldName must be at least 2 characters long';
+    }
+    if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(value.trim())) {
+      return '$fieldName can only contain letters and spaces';
     }
     return null;
   }
 
-  // Maximum length validation
-  static String? validateMaxLength(String? value, int maxLength,
-      {String fieldName = 'Field'}) {
-    if (value != null && value.length > maxLength) {
-      return '$fieldName must be less than $maxLength characters';
+  static String? validateUsername(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Username is required';
+    }
+    if (value.length < 3) {
+      return 'Username must be at least 3 characters long';
+    }
+    if (value.length > 30) {
+      return 'Username must be less than 30 characters';
+    }
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+      return 'Username can only contain letters, numbers, and underscores';
+    }
+    if (value.startsWith('_') || value.endsWith('_')) {
+      return 'Username cannot start or end with an underscore';
     }
     return null;
   }
 
-  // Bio validation
-  static String? validateBio(String? bio) {
-    if (bio == null || bio.isEmpty) {
+  static String? validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return null; // Phone is often optional
+    }
+    if (!value.isValidPhone) {
+      return 'Please enter a valid phone number';
+    }
+    return null;
+  }
+
+  static String? validateUrl(String? value) {
+    if (value == null || value.isEmpty) {
+      return null; // URL is often optional
+    }
+    if (!value.isValidUrl) {
+      return 'Please enter a valid URL (e.g., https://example.com)';
+    }
+    return null;
+  }
+
+  static String? validateBio(String? value) {
+    if (value == null || value.isEmpty) {
       return null; // Bio is optional
     }
-
-    if (bio.length > 500) {
+    if (value.length > 500) {
       return 'Bio must be less than 500 characters';
     }
-
     return null;
   }
 
-  // URL validation
-  static String? validateUrl(String? url) {
-    if (url == null || url.isEmpty) {
-      return null; // URL is optional
+  static String? validateDisplayName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Display name is required';
     }
-
-    final urlRegex = RegExp(
-        r'^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$');
-
-    if (!urlRegex.hasMatch(url)) {
-      return 'Please enter a valid URL';
+    if (value.trim().length < 1) {
+      return 'Display name is required';
     }
-
+    if (value.trim().length > 50) {
+      return 'Display name must be less than 50 characters';
+    }
     return null;
   }
 
-  // Age validation (for date of birth)
-  static String? validateAge(DateTime? dateOfBirth,
-      {int minAge = 13, int maxAge = 120}) {
+  static String? validateAge(DateTime? dateOfBirth, {int minAge = 13}) {
     if (dateOfBirth == null) {
-      return null; // Optional field
+      return null; // Date of birth is often optional
     }
-
     final now = DateTime.now();
     final age = now.year - dateOfBirth.year;
-
-    if (dateOfBirth.isAfter(now)) {
-      return 'Date of birth cannot be in the future';
-    }
-
-    if (age < minAge) {
+    final hasHadBirthdayThisYear = now.month > dateOfBirth.month ||
+        (now.month == dateOfBirth.month && now.day >= dateOfBirth.day);
+    
+    final actualAge = hasHadBirthdayThisYear ? age : age - 1;
+    
+    if (actualAge < minAge) {
       return 'You must be at least $minAge years old';
     }
-
-    if (age > maxAge) {
+    if (actualAge > 120) {
       return 'Please enter a valid date of birth';
     }
-
     return null;
   }
 }

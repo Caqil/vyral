@@ -42,9 +42,6 @@ class _PasswordFieldState extends State<PasswordField> {
       validator: widget.validator,
       onChanged: widget.onChanged,
       onSubmitted: widget.onSubmitted,
-      textInputAction: widget.textInputAction,
-      autofocus: widget.autofocus,
-      focusNode: widget.focusNode,
       prefix: const Icon(Icons.lock_outline),
       suffix: IconButton(
         icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),

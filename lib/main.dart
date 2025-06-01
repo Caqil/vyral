@@ -18,6 +18,22 @@ import 'features/auth/domain/usecases/refresh_token_usecase.dart';
 import 'features/auth/domain/usecases/forgot_password_usecase.dart';
 import 'features/auth/domain/usecases/verify_email_usecase.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/profile/data/datasources/profile_remote_datasource.dart';
+import 'features/profile/data/repositories/profile_repository_impl.dart';
+import 'features/profile/domain/usecases/get_user_profile_usecase.dart';
+import 'features/profile/domain/usecases/get_user_by_username_usecase.dart';
+import 'features/profile/domain/usecases/get_user_stats_usecase.dart';
+import 'features/profile/domain/usecases/get_follow_status_usecase.dart';
+import 'features/profile/domain/usecases/follow_user_usecase.dart';
+import 'features/profile/domain/usecases/unfollow_user_usecase.dart';
+import 'features/profile/domain/usecases/get_user_posts_usecase.dart';
+import 'features/profile/domain/usecases/get_user_media_usecase.dart';
+import 'features/profile/domain/usecases/get_user_highlights_usecase.dart';
+import 'features/profile/domain/usecases/get_followers_usecase.dart';
+import 'features/profile/domain/usecases/get_following_usecase.dart';
+import 'features/profile/domain/usecases/update_profile_usecase.dart';
+import 'features/profile/domain/usecases/upload_profile_picture_usecase.dart';
+import 'features/profile/domain/usecases/upload_cover_picture_usecase.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,7 +62,6 @@ class SocialNetworkApp extends StatelessWidget {
         BlocProvider<AuthBloc>(
           create: (context) => _createAuthBloc(),
         ),
-       
       ],
       child: const App(),
     );
@@ -57,10 +72,19 @@ class SocialNetworkApp extends StatelessWidget {
   static SecureStorage? _sharedSecureStorage;
   static CacheManager? _sharedCacheManager;
 
+  // Auth related
+  static AuthRemoteDataSource? _authRemoteDataSource;
+  static AuthLocalDataSource? _authLocalDataSource;
+  static AuthRepositoryImpl? _authRepository;
+
+  // Profile related
+  static ProfileRemoteDataSource? _profileRemoteDataSource;
+  static ProfileRepositoryImpl? _profileRepository;
+
   static DioClient get dioClient {
     if (_sharedDioClient == null) {
       _sharedDioClient = DioClient();
-      _sharedDioClient!.init(); // Initialize only once
+      _sharedDioClient!.init();
     }
     return _sharedDioClient!;
   }
@@ -75,20 +99,70 @@ class SocialNetworkApp extends StatelessWidget {
     return _sharedCacheManager!;
   }
 
+  // Auth Repository
+  static AuthRepositoryImpl get authRepository {
+    if (_authRepository == null) {
+      _authRemoteDataSource ??= AuthRemoteDataSourceImpl(dioClient);
+      _authLocalDataSource ??= AuthLocalDataSourceImpl(secureStorage);
+      _authRepository = AuthRepositoryImpl(
+        remoteDataSource: _authRemoteDataSource!,
+        localDataSource: _authLocalDataSource!,
+      );
+    }
+    return _authRepository!;
+  }
+
+  // Profile Repository
+  static ProfileRepositoryImpl get profileRepository {
+    if (_profileRepository == null) {
+      _profileRemoteDataSource ??= ProfileRemoteDataSourceImpl(dioClient);
+      _profileRepository = ProfileRepositoryImpl(
+        remoteDataSource: _profileRemoteDataSource!,
+      );
+    }
+    return _profileRepository!;
+  }
+
+  // Auth Use Cases
+  static GetUserProfileUseCase getUserProfileUseCase() =>
+      GetUserProfileUseCase(profileRepository);
+  static GetUserByUsernameUseCase getUserByUsernameUseCase() =>
+      GetUserByUsernameUseCase(profileRepository);
+  static GetUserStatsUseCase getUserStatsUseCase() =>
+      GetUserStatsUseCase(profileRepository);
+  static GetFollowStatusUseCase getFollowStatusUseCase() =>
+      GetFollowStatusUseCase(profileRepository);
+  static FollowUserUseCase getFollowUserUseCase() =>
+      FollowUserUseCase(profileRepository);
+  static UnfollowUserUseCase getUnfollowUserUseCase() =>
+      UnfollowUserUseCase(profileRepository);
+  static GetUserPostsUseCase getUserPostsUseCase() =>
+      GetUserPostsUseCase(profileRepository);
+  static GetUserMediaUseCase getUserMediaUseCase() =>
+      GetUserMediaUseCase(profileRepository);
+  static GetUserHighlightsUseCase getUserHighlightsUseCase() =>
+      GetUserHighlightsUseCase(profileRepository);
+  static GetFollowersUseCase getFollowersUseCase() =>
+      GetFollowersUseCase(profileRepository);
+  static GetFollowingUseCase getFollowingUseCase() =>
+      GetFollowingUseCase(profileRepository);
+  static UpdateProfileUseCase getUpdateProfileUseCase() =>
+      UpdateProfileUseCase(profileRepository);
+  static UploadProfilePictureUseCase getUploadProfilePictureUseCase() =>
+      UploadProfilePictureUseCase(profileRepository);
+  static UploadCoverPictureUseCase getUploadCoverPictureUseCase() =>
+      UploadCoverPictureUseCase(profileRepository);
+
+  // Placeholder use cases for post and comment functionality
+  static GetPostUseCase getPostUseCase() => GetPostUseCase();
+  static GetPostCommentsUseCase getPostCommentsUseCase() =>
+      GetPostCommentsUseCase();
+  static LikePostUseCase getLikePostUseCase() => LikePostUseCase();
+  static CreateCommentUseCase getCreateCommentUseCase() =>
+      CreateCommentUseCase();
+  static LikeCommentUseCase getLikeCommentUseCase() => LikeCommentUseCase();
+
   AuthBloc _createAuthBloc() {
-    // Use shared DioClient instance
-    final dio = dioClient; // This will create and init only once
-
-    // Create data sources
-    final authRemoteDataSource = AuthRemoteDataSourceImpl(dio);
-    final authLocalDataSource = AuthLocalDataSourceImpl(secureStorage);
-
-    // Create repository
-    final authRepository = AuthRepositoryImpl(
-      remoteDataSource: authRemoteDataSource,
-      localDataSource: authLocalDataSource,
-    );
-
     // Create use cases
     final loginUseCase = LoginUseCase(authRepository);
     final registerUseCase = RegisterUseCase(authRepository);
