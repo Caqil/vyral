@@ -1,4 +1,3 @@
-
 import 'package:vyral/features/profile/domain/entities/user_entity.dart';
 
 import '../../domain/entities/follow_status_entity.dart';
@@ -6,6 +5,14 @@ import '../../domain/entities/media_entity.dart';
 import '../../domain/entities/post_entity.dart';
 import '../../domain/entities/story_highlight_entity.dart';
 import '../../domain/entities/user_stats_entity.dart';
+
+enum ProfileErrorType {
+  general,
+  private,
+  suspended,
+  notFound,
+  authRequired,
+}
 
 class ProfileState {
   final UserEntity? user;
@@ -22,10 +29,12 @@ class ProfileState {
   final bool isFollowLoading;
   final bool hasError;
   final String? errorMessage;
+  final ProfileErrorType? errorType;
   final int postsPage;
   final int mediaPage;
   final bool hasMorePosts;
   final bool hasMoreMedia;
+  final bool canViewContent;
 
   const ProfileState({
     this.user,
@@ -42,10 +51,12 @@ class ProfileState {
     this.isFollowLoading = false,
     this.hasError = false,
     this.errorMessage,
+    this.errorType,
     this.postsPage = 0,
     this.mediaPage = 0,
     this.hasMorePosts = true,
     this.hasMoreMedia = true,
+    this.canViewContent = true,
   });
 
   ProfileState copyWith({
@@ -63,10 +74,12 @@ class ProfileState {
     bool? isFollowLoading,
     bool? hasError,
     String? errorMessage,
+    ProfileErrorType? errorType,
     int? postsPage,
     int? mediaPage,
     bool? hasMorePosts,
     bool? hasMoreMedia,
+    bool? canViewContent,
   }) {
     return ProfileState(
       user: user ?? this.user,
@@ -83,10 +96,55 @@ class ProfileState {
       isFollowLoading: isFollowLoading ?? this.isFollowLoading,
       hasError: hasError ?? this.hasError,
       errorMessage: errorMessage,
+      errorType: errorType ?? this.errorType,
       postsPage: postsPage ?? this.postsPage,
       mediaPage: mediaPage ?? this.mediaPage,
       hasMorePosts: hasMorePosts ?? this.hasMorePosts,
       hasMoreMedia: hasMoreMedia ?? this.hasMoreMedia,
+      canViewContent: canViewContent ?? this.canViewContent,
     );
+  }
+
+  // Helper getters
+  bool get isPrivateProfile => user?.isPrivate == true && !isOwnProfile;
+  bool get canViewPosts =>
+      isOwnProfile ||
+      user?.isPrivate != true ||
+      (followStatus?.isFollowing == true);
+  bool get canViewFollowers =>
+      isOwnProfile ||
+      user?.isPrivate != true ||
+      (followStatus?.isFollowing == true);
+  bool get canViewFollowing =>
+      isOwnProfile ||
+      user?.isPrivate != true ||
+      (followStatus?.isFollowing == true);
+  bool get canViewStats => isOwnProfile || user?.isPrivate != true;
+  bool get showFollowButton => !isOwnProfile && user != null;
+  bool get showMessageButton =>
+      !isOwnProfile && user != null && (followStatus?.canMessage == true);
+
+  String get profileAccessibilityText {
+    if (isOwnProfile) return 'Your profile';
+    if (user?.isPrivate == true) {
+      if (followStatus?.isFollowing == true) {
+        return 'Private profile (following)';
+      } else if (followStatus?.isPending == true) {
+        return 'Private profile (request pending)';
+      } else {
+        return 'Private profile';
+      }
+    }
+    return 'Public profile';
+  }
+
+  String get followButtonText {
+    if (followStatus?.isPending == true) {
+      return 'Requested';
+    } else if (followStatus?.isFollowing == true) {
+      return 'Following';
+    } else {
+      return user?.isPrivate == true ? 'Request' : 'Follow';
+    }
   }
 }

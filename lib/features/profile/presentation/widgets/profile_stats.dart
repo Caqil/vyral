@@ -339,45 +339,46 @@ class _ProfileStatsState extends State<ProfileStats>
     return AnimatedBuilder(
       animation: _animations[3],
       builder: (context, child) {
-        return Opacity(
-          opacity: _animations[3].value,
-          child: Row(
-            children: [
-              _buildActivityChip(
-                'Active User',
-                widget.user.isActive,
-                colorScheme,
-                theme,
-              ),
-              const SizedBox(width: 8),
-              if (widget.user.isVerified)
-                _buildActivityChip(
-                  'Verified',
-                  true,
-                  colorScheme,
-                  theme,
-                  color: colorScheme.primary,
-                ),
-              if (widget.user.isPremium) ...[
-                const SizedBox(width: 8),
-                _buildActivityChip(
-                  'Premium',
-                  true,
-                  colorScheme,
-                  theme,
-                  color: const Color(0xFFFFD700),
-                ),
-              ],
-              const Spacer(),
-              Text(
-                'Last active: ${_getLastActiveText()}',
-                style: theme.textTheme.small?.copyWith(
-                  color: colorScheme.mutedForeground,
-                ),
-              ),
-            ],
-          ),
-        );
+        // Only render the Row if the animation value is greater than 0
+        return _animations[3].value > 0
+            ? Row(
+                children: [
+                  _buildActivityChip(
+                    'Active User',
+                    widget.user.isActive,
+                    colorScheme,
+                    theme,
+                  ),
+                  const SizedBox(width: 8),
+                  if (widget.user.isVerified)
+                    _buildActivityChip(
+                      'Verified',
+                      true,
+                      colorScheme,
+                      theme,
+                      color: colorScheme.primary,
+                    ),
+                  if (widget.user.isPremium) ...[
+                    const SizedBox(width: 8),
+                    _buildActivityChip(
+                      'Premium',
+                      true,
+                      colorScheme,
+                      theme,
+                      color: const Color(0xFFFFD700),
+                    ),
+                  ],
+                  const Spacer(),
+                  Text(
+                    'Last active: ${_getLastActiveText()}',
+                    style: theme.textTheme.small.copyWith(
+                      color: colorScheme.mutedForeground,
+                    ),
+                  ),
+                ],
+              )
+            : const SizedBox
+                .shrink();
       },
     );
   }

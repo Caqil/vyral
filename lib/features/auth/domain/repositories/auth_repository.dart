@@ -74,4 +74,14 @@ abstract class AuthRepository {
 
   /// Clear all auth data
   Future<void> clearAuthData();
+
+  // New methods for refresh time tracking
+  /// Store the last token refresh time
+  Future<void> storeLastRefreshTime();
+
+  /// Get the last token refresh time
+  Future<DateTime?> getLastRefreshTime();
+
+  /// Clear the last token refresh time
+  Future<void> clearLastRefreshTime();
 }

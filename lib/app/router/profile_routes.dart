@@ -23,7 +23,7 @@ List<RouteBase> profileRoutes = [
       final username = state.uri.queryParameters['username'];
 
       return BlocProvider(
-        create: (context) => _createProfileBloc(),
+        create: (context) => _createProfileBloc(context),
         child: ProfilePage(
           userId: userId,
           username: username,
@@ -165,7 +165,7 @@ List<RouteBase> profileRoutes = [
 ];
 
 // Dependency injection helpers
-ProfileBloc _createProfileBloc() {
+ProfileBloc _createProfileBloc(BuildContext context) {
   return ProfileBloc(
     getUserProfile: SocialNetworkApp.getUserProfileUseCase(),
     getUserPosts: SocialNetworkApp.getUserPostsUseCase(),
@@ -174,6 +174,8 @@ ProfileBloc _createProfileBloc() {
     unfollowUser: SocialNetworkApp.getUnfollowUserUseCase(),
     getFollowStatus: SocialNetworkApp.getFollowStatusUseCase(),
     getUserStats: SocialNetworkApp.getUserStatsUseCase(),
+    getCurrentUserId: () =>
+        SocialNetworkApp.getCurrentUserIdWithContext(context),
   );
 }
 

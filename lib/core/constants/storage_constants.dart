@@ -7,7 +7,7 @@ class StorageConstants {
   static const String userName = 'user_name';
   static const String fcmToken = 'fcm_token';
   static const String biometricEnabled = 'biometric_enabled';
-
+  static const String lastTokenRefresh = 'last_token_refresh';
   // Shared preferences keys
   static const String isFirstLaunch = 'is_first_launch';
   static const String onboardingCompleted = 'onboarding_completed';

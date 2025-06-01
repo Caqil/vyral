@@ -1,3 +1,5 @@
+// Updated main.dart - Simple solution
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -96,6 +98,9 @@ class SocialNetworkApp extends StatelessWidget {
   static PostsRemoteDataSource? _postsRemoteDataSource;
   static PostsRepositoryImpl? _postsRepository;
 
+  // SIMPLE: Store current user ID in memory
+  static String? _currentUserId;
+
   static DioClient get dioClient {
     if (_sharedDioClient == null) {
       _sharedDioClient = DioClient();
@@ -133,6 +138,7 @@ class SocialNetworkApp extends StatelessWidget {
       _profileRemoteDataSource ??= ProfileRemoteDataSourceImpl(dioClient);
       _profileRepository = ProfileRepositoryImpl(
         remoteDataSource: _profileRemoteDataSource!,
+        getCurrentUserId: getCurrentUserId, // Simple sync function
       );
     }
     return _profileRepository!;
@@ -149,14 +155,26 @@ class SocialNetworkApp extends StatelessWidget {
     return _postsRepository!;
   }
 
-  // Helper method to get current user ID
-  static String getCurrentUserId(BuildContext context) {
+  static String? getCurrentUserId() {
+    return _currentUserId;
+  }
+
+  static void setCurrentUserId(String? userId) {
+    _currentUserId = userId;
+  }
+
+  static void clearCurrentUserId() {
+    _currentUserId = null;
+  }
+
+  // Helper method to get current user ID with context (for widgets)
+  static String? getCurrentUserIdWithContext(BuildContext context) {
     try {
       final authBloc = context.read<AuthBloc>();
-      return authBloc.state.user?.id ?? 'current_user_id';
+      return authBloc.state.user?.id;
     } catch (e) {
-      // Fallback if context is not available or AuthBloc is not found
-      return 'current_user_id';
+      // Fallback to stored value
+      return getCurrentUserId();
     }
   }
 

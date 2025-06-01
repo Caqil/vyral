@@ -11,18 +11,32 @@ import '../../../../shared/models/api_response.dart';
 import '../models/user_model.dart';
 
 abstract class ProfileRemoteDataSource {
+  // Current user profile (my profile)
+  Future<UserModel> getCurrentUserProfile();
+
+  // Other user's profile
   Future<UserModel> getUserProfile(String userId);
   Future<UserModel> getUserByUsername(String username);
+
+  // Profile stats and status
   Future<UserStatsModel> getUserStats(String userId);
   Future<FollowStatusModel> getFollowStatus(String userId);
+
+  // Follow operations
   Future<FollowStatusModel> followUser(String userId);
   Future<FollowStatusModel> unfollowUser(String userId);
+
+  // User content
   Future<List<PostModel>> getUserPosts(String userId, int page, int limit);
   Future<List<MediaModel>> getUserMedia(
       String userId, int page, int limit, String? type);
   Future<List<StoryHighlightModel>> getUserHighlights(String userId);
+
+  // Follow lists
   Future<List<UserModel>> getFollowers(String userId, int page, int limit);
   Future<List<UserModel>> getFollowing(String userId, int page, int limit);
+
+  // Profile updates
   Future<UserModel> updateProfile(Map<String, dynamic> data);
 }
 
@@ -30,6 +44,32 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   final DioClient _dioClient;
 
   ProfileRemoteDataSourceImpl(this._dioClient);
+
+  @override
+  Future<UserModel> getCurrentUserProfile() async {
+    try {
+      final response = await _dioClient.get('/auth/profile');
+
+      final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+        response.data,
+        (json) => json as Map<String, dynamic>,
+      );
+
+      if (apiResponse.success && apiResponse.data != null) {
+        return UserModel.fromJson(apiResponse.data!);
+      } else {
+        throw Exception(
+            apiResponse.message ?? 'Failed to get current user profile');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw Exception('Authentication required');
+      }
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      throw Exception('Failed to get current user profile: $e');
+    }
+  }
 
   @override
   Future<UserModel> getUserProfile(String userId) async {
@@ -47,6 +87,13 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
         throw Exception(apiResponse.message ?? 'Failed to get user profile');
       }
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        throw Exception('User not found');
+      } else if (e.response?.statusCode == 403) {
+        throw Exception('This profile is private');
+      } else if (e.response?.statusCode == 423) {
+        throw Exception('This account has been suspended');
+      }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
       throw Exception('Failed to get user profile: $e');
@@ -71,6 +118,10 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw Exception('User not found');
+      } else if (e.response?.statusCode == 403) {
+        throw Exception('This profile is private');
+      } else if (e.response?.statusCode == 423) {
+        throw Exception('This account has been suspended');
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
@@ -93,6 +144,11 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       } else {
         throw Exception(apiResponse.message ?? 'Failed to get user stats');
       }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        throw Exception('Cannot view stats for private profile');
+      }
+      throw Exception('Network error: ${e.message}');
     } catch (e) {
       throw Exception('Failed to get user stats: $e');
     }
@@ -182,6 +238,11 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       } else {
         throw Exception(apiResponse.message ?? 'Failed to get user posts');
       }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        throw Exception('Cannot view posts from private profile');
+      }
+      throw Exception('Network error: ${e.message}');
     } catch (e) {
       throw Exception('Failed to get user posts: $e');
     }
@@ -217,6 +278,11 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       } else {
         throw Exception(apiResponse.message ?? 'Failed to get user media');
       }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        throw Exception('Cannot view media from private profile');
+      }
+      throw Exception('Network error: ${e.message}');
     } catch (e) {
       throw Exception('Failed to get user media: $e');
     }
@@ -240,6 +306,11 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       } else {
         return []; // Return empty list if no highlights
       }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        return []; // Return empty list for private profiles
+      }
+      return []; // Return empty list on other errors
     } catch (e) {
       return []; // Return empty list on error
     }
@@ -269,6 +340,11 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       } else {
         throw Exception(apiResponse.message ?? 'Failed to get followers');
       }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        throw Exception('Cannot view followers of private profile');
+      }
+      throw Exception('Network error: ${e.message}');
     } catch (e) {
       throw Exception('Failed to get followers: $e');
     }
@@ -298,6 +374,11 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       } else {
         throw Exception(apiResponse.message ?? 'Failed to get following');
       }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        throw Exception('Cannot view following of private profile');
+      }
+      throw Exception('Network error: ${e.message}');
     } catch (e) {
       throw Exception('Failed to get following: $e');
     }

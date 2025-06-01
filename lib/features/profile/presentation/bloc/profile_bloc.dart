@@ -8,6 +8,7 @@ import '../../domain/usecases/get_user_posts_usecase.dart';
 import '../../domain/usecases/get_user_profile_usecase.dart';
 import '../../domain/usecases/get_user_stats_usecase.dart';
 import '../../domain/usecases/unfollow_user_usecase.dart';
+import '../../data/repositories/profile_repository_impl.dart';
 import 'profile_event.dart';
 import 'profile_state.dart';
 
@@ -19,6 +20,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final UnfollowUserUseCase unfollowUser;
   final GetFollowStatusUseCase getFollowStatus;
   final GetUserStatsUseCase getUserStats;
+  final String? Function() getCurrentUserId; // Function to get current user ID
 
   ProfileBloc({
     required this.getUserProfile,
@@ -28,6 +30,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     required this.unfollowUser,
     required this.getFollowStatus,
     required this.getUserStats,
+    required this.getCurrentUserId,
   }) : super(const ProfileState()) {
     on<ProfileLoadRequested>(_onProfileLoadRequested);
     on<ProfileRefreshRequested>(_onProfileRefreshRequested);
@@ -45,37 +48,66 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     emit(state.copyWith(
       isLoading: true,
       errorMessage: null,
+      hasError: false,
     ));
 
     try {
+      // Get current user ID
+      final currentUserId = getCurrentUserId();
+
+      // Check if it's own profile
+      final isOwnProfile =
+          currentUserId != null && currentUserId == event.userId;
+
       // Load user profile
       final profileResult = await getUserProfile(event.userId);
 
       await profileResult.fold(
         (failure) async {
+          String errorMessage = failure.message;
+          ProfileErrorType errorType = ProfileErrorType.general;
+
+          // Handle specific error types
+          if (failure is PrivacyFailure) {
+            errorType = ProfileErrorType.private;
+            errorMessage = 'This profile is private';
+          } else if (failure is SuspendedAccountFailure) {
+            errorType = ProfileErrorType.suspended;
+            errorMessage = 'This account has been suspended';
+          } else if (failure is NotFoundFailure) {
+            errorType = ProfileErrorType.notFound;
+            errorMessage = 'User not found';
+          } else if (failure is AuthenticationFailure) {
+            errorType = ProfileErrorType.authRequired;
+            errorMessage = 'Please log in to view this profile';
+          }
+
           emit(state.copyWith(
             isLoading: false,
             hasError: true,
-            errorMessage: failure.message,
+            errorMessage: errorMessage,
           ));
         },
         (user) async {
-          // Check if it's own profile
-          final isOwnProfile =
-              user.id == 'current_user_id'; // Get from auth state
-
           emit(state.copyWith(
             user: user,
             isOwnProfile: isOwnProfile,
           ));
 
-          // Load additional data concurrently
-          await Future.wait([
-            _loadUserStats(user.id, emit),
-            _loadFollowStatus(user.id, emit, isOwnProfile),
-            _loadUserPosts(user.id, emit, isInitial: true),
-            _loadUserMedia(user.id, emit, isInitial: true),
-          ]);
+          // Only load additional data if profile is accessible
+          if (!user.isPrivate || isOwnProfile) {
+            await Future.wait([
+              _loadUserStats(user.id, emit),
+              _loadFollowStatus(user.id, emit, isOwnProfile),
+              _loadUserPosts(user.id, emit, isInitial: true),
+              _loadUserMedia(user.id, emit, isInitial: true),
+            ]);
+          } else {
+            // For private profiles, only load follow status for non-own profiles
+            if (!isOwnProfile) {
+              await _loadFollowStatus(user.id, emit, isOwnProfile);
+            }
+          }
 
           emit(state.copyWith(
             isLoading: false,
@@ -100,15 +132,32 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     emit(state.copyWith(isRefreshing: true));
 
     try {
-      // Refresh all data
-      await Future.wait([
-        _loadUserStats(state.user!.id, emit),
-        _loadFollowStatus(state.user!.id, emit, state.isOwnProfile),
-        _loadUserPosts(state.user!.id, emit, isRefresh: true),
-        _loadUserMedia(state.user!.id, emit, isRefresh: true),
-      ]);
+      // Reload user profile first
+      final profileResult = await getUserProfile(state.user!.id);
 
-      emit(state.copyWith(isRefreshing: false));
+      await profileResult.fold(
+        (failure) async {
+          emit(state.copyWith(
+            isRefreshing: false,
+            errorMessage: failure.message,
+          ));
+        },
+        (user) async {
+          emit(state.copyWith(user: user));
+
+          // Refresh all data if profile is accessible
+          if (!user.isPrivate || state.isOwnProfile) {
+            await Future.wait([
+              _loadUserStats(state.user!.id, emit),
+              _loadFollowStatus(state.user!.id, emit, state.isOwnProfile),
+              _loadUserPosts(state.user!.id, emit, isRefresh: true),
+              _loadUserMedia(state.user!.id, emit, isRefresh: true),
+            ]);
+          }
+
+          emit(state.copyWith(isRefreshing: false));
+        },
+      );
     } catch (e) {
       emit(state.copyWith(
         isRefreshing: false,
@@ -121,7 +170,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     ProfileFollowRequested event,
     Emitter<ProfileState> emit,
   ) async {
-    if (state.followStatus == null) return;
+    if (state.followStatus == null || state.isOwnProfile) return;
 
     emit(state.copyWith(isFollowLoading: true));
 
@@ -138,10 +187,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         emit(state.copyWith(
           isFollowLoading: false,
           followStatus: followStatus,
-          // Update follower count optimistically
-          user: state.user?.copyWith(
-            followersCount: state.user!.followersCount + 1,
-          ),
+          // Update follower count optimistically only if not pending
+          user: followStatus.isFollowing && !followStatus.isPending
+              ? state.user?.copyWith(
+                  followersCount: state.user!.followersCount + 1,
+                )
+              : state.user,
         ));
       },
     );
@@ -151,7 +202,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     ProfileUnfollowRequested event,
     Emitter<ProfileState> emit,
   ) async {
-    if (state.followStatus == null) return;
+    if (state.followStatus == null || state.isOwnProfile) return;
 
     emit(state.copyWith(isFollowLoading: true));
 
@@ -170,7 +221,9 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           followStatus: followStatus,
           // Update follower count optimistically
           user: state.user?.copyWith(
-            followersCount: state.user!.followersCount - 1,
+            followersCount: (state.user!.followersCount - 1)
+                .clamp(0, double.infinity)
+                .toInt(),
           ),
         ));
       },
@@ -183,6 +236,9 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ) async {
     if (state.isLoadingPosts || !state.hasMorePosts) return;
 
+    // Don't load posts for private profiles unless it's own profile
+    if (state.user?.isPrivate == true && !state.isOwnProfile) return;
+
     await _loadUserPosts(event.userId, emit, isLoadMore: true);
   }
 
@@ -191,6 +247,9 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     if (state.isLoadingMedia || !state.hasMoreMedia) return;
+
+    // Don't load media for private profiles unless it's own profile
+    if (state.user?.isPrivate == true && !state.isOwnProfile) return;
 
     await _loadUserMedia(event.userId, emit, isLoadMore: true);
   }
@@ -213,6 +272,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     result.fold(
       (failure) {
         // Don't emit error for stats failure, just log it
+        print('Failed to load user stats: ${failure.message}');
       },
       (stats) {
         emit(state.copyWith(stats: stats));
@@ -231,6 +291,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     result.fold(
       (failure) {
         // Don't emit error for follow status failure
+        print('Failed to load follow status: ${failure.message}');
       },
       (followStatus) {
         emit(state.copyWith(followStatus: followStatus));
@@ -329,4 +390,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       },
     );
   }
+}
+
+// Add enum for different error types
+enum ProfileErrorType {
+  general,
+  private,
+  suspended,
+  notFound,
+  authRequired,
 }

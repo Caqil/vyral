@@ -1,4 +1,5 @@
-// lib/features/auth/data/repositories/auth_repository_impl.dart
+// Updated lib/features/auth/data/repositories/auth_repository_impl.dart
+
 import 'package:dartz/dartz.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io';
@@ -380,6 +381,22 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> clearAuthData() async {
     await localDataSource.clearAuthData();
+  }
+
+  // New methods for refresh time tracking
+  @override
+  Future<void> storeLastRefreshTime() async {
+    await localDataSource.storeLastRefreshTime();
+  }
+
+  @override
+  Future<DateTime?> getLastRefreshTime() async {
+    return await localDataSource.getLastRefreshTime();
+  }
+
+  @override
+  Future<void> clearLastRefreshTime() async {
+    await localDataSource.clearLastRefreshTime();
   }
 
   /// Get device information for login tracking

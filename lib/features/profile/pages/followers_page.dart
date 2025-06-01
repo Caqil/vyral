@@ -76,6 +76,7 @@ class _FollowersPageState extends State<FollowersPage> {
           }
 
           if (state.hasError && state.followers.isEmpty) {
+            print(state.errorMessage);
             return CustomErrorWidget(
               title: 'Failed to Load',
               message: state.errorMessage ?? 'Failed to load followers',
@@ -169,5 +170,3 @@ class _FollowersPageState extends State<FollowersPage> {
     // This would typically trigger another bloc event
   }
 }
-
-

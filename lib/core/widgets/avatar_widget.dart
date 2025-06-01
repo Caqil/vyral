@@ -1,69 +1,106 @@
-import 'package:flutter/material.dart';
+// lib/core/widgets/avatar_widget.dart
 import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:vyral/core/utils/extensions.dart';
 
 class AvatarWidget extends StatelessWidget {
   final String? imageUrl;
   final String name;
   final double size;
-  final Color? backgroundColor;
-  final Color? textColor;
   final VoidCallback? onTap;
-  final bool showBorder;
-  final Color? borderColor;
-  final double borderWidth;
+  final bool showOnlineStatus;
+  final bool isOnline;
+  final bool showPrivateIcon;
+  final Widget? customPlaceholder;
 
   const AvatarWidget({
     super.key,
     this.imageUrl,
     required this.name,
     this.size = 40,
-    this.backgroundColor,
-    this.textColor,
     this.onTap,
-    this.showBorder = false,
-    this.borderColor,
-    this.borderWidth = 2,
+    this.showOnlineStatus = false,
+    this.isOnline = false,
+    this.showPrivateIcon = false,
+    this.customPlaceholder,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final effectiveBackgroundColor = backgroundColor ?? _generateColor(name);
-    final effectiveTextColor =
-        textColor ?? _getContrastColor(effectiveBackgroundColor);
+    final colorScheme = context.colorScheme;
 
     Widget avatar = Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: effectiveBackgroundColor,
-        border: showBorder
-            ? Border.all(
-                color: borderColor ?? theme.colorScheme.outline,
-                width: borderWidth,
-              )
-            : null,
+        color: colorScheme.muted,
       ),
-      child: imageUrl != null && imageUrl!.isNotEmpty
-          ? ClipOval(
-              child: CachedNetworkImage(
+      child: ClipOval(
+        child: imageUrl != null && imageUrl!.isNotEmpty && !showPrivateIcon
+            ? CachedNetworkImage(
                 imageUrl: imageUrl!,
-                width: size,
-                height: size,
                 fit: BoxFit.cover,
                 placeholder: (context, url) =>
-                    _buildInitials(effectiveTextColor),
+                    _buildPlaceholder(context, colorScheme),
                 errorWidget: (context, url, error) =>
-                    _buildInitials(effectiveTextColor),
-              ),
-            )
-          : _buildInitials(effectiveTextColor),
+                    _buildPlaceholder(context, colorScheme),
+              )
+            : _buildPlaceholder(context, colorScheme),
+      ),
     );
 
+    // Add online status indicator
+    if (showOnlineStatus || showPrivateIcon) {
+      avatar = Stack(
+        children: [
+          avatar,
+          if (showOnlineStatus)
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                width: size * 0.25,
+                height: size * 0.25,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isOnline ? Colors.green : Colors.grey,
+                  border: Border.all(
+                    color: colorScheme.background,
+                    width: size * 0.04,
+                  ),
+                ),
+              ),
+            ),
+          if (showPrivateIcon)
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                width: size * 0.3,
+                height: size * 0.3,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colorScheme.muted,
+                  border: Border.all(
+                    color: colorScheme.background,
+                    width: size * 0.04,
+                  ),
+                ),
+                child: Icon(
+                  LucideIcons.lock,
+                  size: size * 0.15,
+                  color: colorScheme.mutedForeground,
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+
     if (onTap != null) {
-      avatar = GestureDetector(
+      return GestureDetector(
         onTap: onTap,
         child: avatar,
       );
@@ -72,17 +109,50 @@ class AvatarWidget extends StatelessWidget {
     return avatar;
   }
 
-  Widget _buildInitials(Color textColor) {
-    final initials = _getInitials(name);
-    final fontSize = size * 0.4;
+  Widget _buildPlaceholder(BuildContext context, ShadColorScheme colorScheme) {
+    if (customPlaceholder != null) {
+      return customPlaceholder!;
+    }
 
-    return Center(
-      child: Text(
-        initials,
-        style: TextStyle(
-          color: textColor,
-          fontSize: fontSize,
-          fontWeight: FontWeight.w600,
+    if (showPrivateIcon) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: colorScheme.muted,
+        ),
+        child: Icon(
+          LucideIcons.user,
+          size: size * 0.5,
+          color: colorScheme.mutedForeground.withOpacity(0.5),
+        ),
+      );
+    }
+
+    // Generate initials from name
+    final initials = _getInitials(name);
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [
+            _getColorFromName(name),
+            _getColorFromName(name).withOpacity(0.7),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          initials,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: size * 0.4,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -92,66 +162,29 @@ class AvatarWidget extends StatelessWidget {
     if (name.isEmpty) return '?';
 
     final words = name.trim().split(RegExp(r'\s+'));
-    if (words.length == 1) {
-      return words[0].substring(0, math.min(2, words[0].length)).toUpperCase();
+    if (words.length >= 2) {
+      return '${words[0][0]}${words[1][0]}'.toUpperCase();
     } else {
-      return (words[0][0] + words[1][0]).toUpperCase();
+      return name.substring(0, 1).toUpperCase();
     }
   }
 
-  Color _generateColor(String text) {
-    final hash = text.hashCode;
-    final hue = (hash % 360).toDouble();
-    return HSVColor.fromAHSV(1.0, hue, 0.6, 0.8).toColor();
-  }
+  Color _getColorFromName(String name) {
+    // Generate a color based on the name for consistent avatar colors
+    final hash = name.hashCode;
+    final colors = [
+      Colors.blue,
+      Colors.green,
+      Colors.purple,
+      Colors.orange,
+      Colors.red,
+      Colors.teal,
+      Colors.indigo,
+      Colors.pink,
+      Colors.amber,
+      Colors.cyan,
+    ];
 
-  Color _getContrastColor(Color backgroundColor) {
-    final luminance = backgroundColor.computeLuminance();
-    return luminance > 0.5 ? Colors.black87 : Colors.white;
-  }
-}
-
-// lib/core/widgets/loading_widget.dart
-class LoadingWidget extends StatelessWidget {
-  final String? message;
-  final double size;
-  final Color? color;
-
-  const LoadingWidget({
-    super.key,
-    this.message,
-    this.size = 24,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: size,
-            height: size,
-            child: CircularProgressIndicator(
-              color: color ?? theme.colorScheme.primary,
-              strokeWidth: 2,
-            ),
-          ),
-          if (message != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              message!,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ],
-      ),
-    );
+    return colors[hash.abs() % colors.length];
   }
 }

@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:vyral/features/auth/presentation/bloc/auth_event.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
@@ -86,11 +88,21 @@ class AppRouter {
             path: RouteNames.home,
             name: 'home',
             builder: (context, state) {
-              return const Scaffold(
-                body: Center(
-                  child: Text('Home Page - Coming Soon'),
+              return Scaffold(
+                  body: Center(
+                      child: ShadButton.ghost(
+                onPressed: () {
+                  context.read<AuthBloc>().add(const AuthLogoutRequested());
+                },
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.logOut, size: 16),
+                    SizedBox(width: 8),
+                    Text('Logout'),
+                  ],
                 ),
-              );
+              )));
             },
           ),
 
@@ -313,6 +325,7 @@ class AppRouter {
       unfollowUser: SocialNetworkApp.getUnfollowUserUseCase(),
       getFollowStatus: SocialNetworkApp.getFollowStatusUseCase(),
       getUserStats: SocialNetworkApp.getUserStatsUseCase(),
+      getCurrentUserId: () => SocialNetworkApp.getCurrentUserId(),
     );
   }
 }

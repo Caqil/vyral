@@ -1,3 +1,5 @@
+// Updated lib/features/auth/data/datasources/auth_local_datasource.dart
+
 import 'dart:convert';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../../core/constants/storage_constants.dart';
@@ -14,6 +16,11 @@ abstract class AuthLocalDataSource {
   Future<UserModel?> getCurrentUser();
   Future<bool> isAuthenticated();
   Future<void> clearAuthData();
+
+  // New methods for refresh time tracking
+  Future<void> storeLastRefreshTime();
+  Future<DateTime?> getLastRefreshTime();
+  Future<void> clearLastRefreshTime();
 }
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
@@ -73,5 +80,45 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       _secureStorage.delete(StorageConstants.userName),
       _secureStorage.delete('user_data'),
     ]);
+  }
+
+  // New methods for refresh time tracking
+  @override
+  Future<void> storeLastRefreshTime() async {
+    try {
+      await _secureStorage.write(
+        StorageConstants.lastTokenRefresh,
+        DateTime.now().toIso8601String(),
+      );
+      print('✅ Stored last refresh time');
+    } catch (e) {
+      print('❌ Failed to store refresh time: $e');
+      throw e;
+    }
+  }
+
+  @override
+  Future<DateTime?> getLastRefreshTime() async {
+    try {
+      final lastRefreshString =
+          await _secureStorage.read(StorageConstants.lastTokenRefresh);
+      if (lastRefreshString != null) {
+        return DateTime.parse(lastRefreshString);
+      }
+      return null;
+    } catch (e) {
+      print('❌ Failed to get last refresh time: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> clearLastRefreshTime() async {
+    try {
+      await _secureStorage.delete(StorageConstants.lastTokenRefresh);
+      print('🧹 Cleared last refresh time');
+    } catch (e) {
+      print('❌ Failed to clear refresh time: $e');
+    }
   }
 }

@@ -88,7 +88,9 @@ class _ProfilePageState extends State<ProfilePage>
     return BlocBuilder<ProfileBloc, ProfileState>(
       builder: (context, state) {
         return Scaffold(
-          body: CustomScrollView(
+            body: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: CustomScrollView(
             controller: _scrollController,
             slivers: [
               // Animated App Bar
@@ -176,7 +178,7 @@ class _ProfilePageState extends State<ProfilePage>
               ),
             ],
           ),
-        );
+        ));
       },
     );
   }

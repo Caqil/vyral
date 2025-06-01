@@ -1,17 +1,18 @@
 // lib/features/profile/presentation/widgets/profile_action_buttons.dart
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
-import 'package:vyral/features/profile/domain/entities/user_entity.dart';
-import '../../../../core/utils/extensions.dart';
+import 'package:vyral/core/utils/extensions.dart';
 import '../../domain/entities/follow_status_entity.dart';
+import '../../domain/entities/user_entity.dart';
 
-class ProfileActionButtons extends StatefulWidget {
+class ProfileActionButtons extends StatelessWidget {
   final UserEntity user;
   final bool isOwnProfile;
   final FollowStatusEntity? followStatus;
   final VoidCallback? onFollowPressed;
   final VoidCallback? onMessagePressed;
   final VoidCallback? onEditPressed;
+  final bool isPrivateView;
 
   const ProfileActionButtons({
     super.key,
@@ -21,76 +22,28 @@ class ProfileActionButtons extends StatefulWidget {
     this.onFollowPressed,
     this.onMessagePressed,
     this.onEditPressed,
+    this.isPrivateView = false,
   });
-
-  @override
-  State<ProfileActionButtons> createState() => _ProfileActionButtonsState();
-}
-
-class _ProfileActionButtonsState extends State<ProfileActionButtons>
-    with TickerProviderStateMixin {
-  late AnimationController _followAnimationController;
-  late Animation<double> _followScaleAnimation;
-  late Animation<Color?> _followColorAnimation;
-
-  bool _isFollowLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeAnimations();
-  }
-
-  void _initializeAnimations() {
-    _followAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-
-    _followScaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _followAnimationController,
-      curve: Curves.easeInOut,
-    ));
-
-    _followColorAnimation = ColorTween(
-      begin: Colors.blue,
-      end: Colors.red,
-    ).animate(_followAnimationController);
-  }
-
-  @override
-  void dispose() {
-    _followAnimationController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
-    final theme = ShadTheme.of(context);
 
-    if (widget.isOwnProfile) {
-      return _buildOwnProfileActions(colorScheme, theme);
+    if (isOwnProfile) {
+      return _buildOwnProfileButtons(context, colorScheme);
     } else {
-      return _buildOtherProfileActions(colorScheme, theme);
+      return _buildOtherProfileButtons(context, colorScheme);
     }
   }
 
-  Widget _buildOwnProfileActions(
-    ShadColorScheme colorScheme,
-    ShadThemeData theme,
-  ) {
+  Widget _buildOwnProfileButtons(
+      BuildContext context, ShadColorScheme colorScheme) {
     return Row(
       children: [
-        // Edit Profile Button
         Expanded(
-          flex: 2,
-          child: ShadButton.outline(
-            onPressed: widget.onEditPressed,
-            child:  Row(
+          child: ShadButton(
+            onPressed: onEditPressed,
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(LucideIcons.pen, size: 16),
@@ -100,250 +53,146 @@ class _ProfileActionButtonsState extends State<ProfileActionButtons>
             ),
           ),
         ),
-
         const SizedBox(width: 12),
-
-        // Share Profile Button
         ShadButton.outline(
-          onPressed: _handleShareProfile,
+          onPressed: () => _showProfileOptions(context),
           child: const Icon(LucideIcons.share),
-        ),
-
-        const SizedBox(width: 8),
-
-        // More Options Button
-        ShadButton.ghost(
-          onPressed: _handleMoreOptions,
-          child:  Icon(LucideIcons.menu),
         ),
       ],
     );
   }
 
-  Widget _buildOtherProfileActions(
-    ShadColorScheme colorScheme,
-    ShadThemeData theme,
-  ) {
+  Widget _buildOtherProfileButtons(
+      BuildContext context, ShadColorScheme colorScheme) {
     return Row(
       children: [
-        // Follow/Unfollow Button
+        // Follow/Following Button
         Expanded(
           flex: 2,
-          child: AnimatedBuilder(
-            animation: _followAnimationController,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _followScaleAnimation.value,
-                child: _buildFollowButton(colorScheme, theme),
-              );
-            },
-          ),
+          child: _buildFollowButton(context, colorScheme),
         ),
 
         const SizedBox(width: 12),
 
         // Message Button
-        ShadButton.outline(
-          onPressed: widget.onMessagePressed,
-          child: const Icon(LucideIcons.messageCircle),
-        ),
-
-        const SizedBox(width: 8),
+        if (_canMessage) ...[
+          Expanded(
+            child: ShadButton.outline(
+              onPressed: onMessagePressed,
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(LucideIcons.messageCircle, size: 16),
+                  SizedBox(width: 8),
+                  Text('Message'),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+        ],
 
         // More Options Button
-        ShadButton.ghost(
-          onPressed: _handleMoreOptions,
-          child:  Icon(LucideIcons.menu),
+        ShadButton.outline(
+          onPressed: () => _showUserOptions(context),
+          child: const Icon(LucideIcons.menu),
         ),
       ],
     );
   }
 
-  Widget _buildFollowButton(
-    ShadColorScheme colorScheme,
-    ShadThemeData theme,
-  ) {
-    final followStatus = widget.followStatus;
-    final isFollowing = followStatus?.isFollowing ?? false;
-    final isPending = followStatus?.isPending ?? false;
-    final isBlocked = followStatus?.isBlocked ?? false;
-
-    if (isBlocked) {
-      return ShadButton.destructive(
-        onPressed: null,
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LucideIcons.userX, size: 16),
-            SizedBox(width: 8),
-            Text('Blocked'),
-          ],
-        ),
-      );
-    }
-
-    if (isPending) {
-      return ShadButton.outline(
-        onPressed: _handleFollowAction,
+  Widget _buildFollowButton(BuildContext context, ShadColorScheme colorScheme) {
+    if (followStatus == null) {
+      return ShadButton(
+        onPressed: onFollowPressed,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (_isFollowLoading) ...[
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    colorScheme.primary,
-                  ),
-                ),
-              ),
-            ] else ...[
-              const Icon(LucideIcons.clock, size: 16),
-            ],
+            const Icon(LucideIcons.userPlus, size: 16),
             const SizedBox(width: 8),
-            const Text('Pending'),
+            Text(user.isPrivate ? 'Request' : 'Follow'),
           ],
         ),
       );
     }
 
-    if (isFollowing) {
-      return _buildFollowingButton(colorScheme, theme);
-    } else {
-      return _buildFollowButton2(colorScheme, theme);
-    }
-  }
-
-  Widget _buildFollowingButton(
-    ShadColorScheme colorScheme,
-    ShadThemeData theme,
-  ) {
-    return MouseRegion(
-      onEnter: (_) => _followAnimationController.forward(),
-      onExit: (_) => _followAnimationController.reverse(),
-      child: ShadButton.secondary(
-        onPressed: _handleFollowAction,
-        child: AnimatedBuilder(
-          animation: _followAnimationController,
-          builder: (context, child) {
-            final isHovered = _followAnimationController.value > 0.5;
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_isFollowLoading) ...[
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        colorScheme.secondaryForeground,
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  Icon(
-                    isHovered ? LucideIcons.userMinus : LucideIcons.userCheck,
-                    size: 16,
-                    color: isHovered ? Colors.red : null,
-                  ),
-                ],
-                const SizedBox(width: 8),
-                Text(
-                  isHovered ? 'Unfollow' : 'Following',
-                  style: TextStyle(
-                    color: isHovered ? Colors.red : null,
-                  ),
-                ),
-              ],
-            );
-          },
+    if (followStatus!.isPending) {
+      return ShadButton.outline(
+        onPressed: onFollowPressed,
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(LucideIcons.clock, size: 16),
+            SizedBox(width: 8),
+            Text('Requested'),
+          ],
         ),
-      ),
-    );
-  }
+      );
+    }
 
-  Widget _buildFollowButton2(
-    ShadColorScheme colorScheme,
-    ShadThemeData theme,
-  ) {
-    return ShadButton.secondary(
-      onPressed: _handleFollowAction,
+    if (followStatus!.isFollowing) {
+      return ShadButton.outline(
+        onPressed: onFollowPressed,
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(LucideIcons.userCheck, size: 16),
+            SizedBox(width: 8),
+            Text('Following'),
+          ],
+        ),
+      );
+    }
+
+    return ShadButton(
+      onPressed: onFollowPressed,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (_isFollowLoading) ...[
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  colorScheme.primaryForeground,
-                ),
-              ),
-            ),
-          ] else ...[
-            const Icon(LucideIcons.userPlus, size: 16),
-          ],
+          const Icon(LucideIcons.userPlus, size: 16),
           const SizedBox(width: 8),
-          const Text('Follow'),
+          Text(user.isPrivate ? 'Request' : 'Follow'),
         ],
       ),
     );
   }
 
-  void _handleFollowAction() async {
-    if (_isFollowLoading) return;
-
-    setState(() => _isFollowLoading = true);
-
-    // Add haptic feedback
-    // HapticFeedback.lightImpact();
-
-    try {
-      await Future.delayed(
-          const Duration(milliseconds: 300)); // Simulate API call
-      widget.onFollowPressed?.call();
-    } finally {
-      if (mounted) {
-        setState(() => _isFollowLoading = false);
-      }
-    }
+  bool get _canMessage {
+    if (isPrivateView) return false;
+    if (followStatus == null) return !user.isPrivate;
+    return followStatus!.canMessage;
   }
 
-  void _handleShareProfile() {
+  void _showProfileOptions(BuildContext context) {
     showShadSheet(
       context: context,
       builder: (context) => ShadSheet(
-        title: const Text('Share Profile'),
+        title: const Text('Profile Options'),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              leading: const Icon(LucideIcons.share),
+              title: const Text('Share Profile'),
+              onTap: () {
+                Navigator.pop(context);
+                _shareProfile(context);
+              },
+            ),
             ListTile(
               leading: const Icon(LucideIcons.copy),
               title: const Text('Copy Profile Link'),
               onTap: () {
                 Navigator.pop(context);
-                _copyProfileLink();
+                _copyProfileLink(context);
               },
             ),
             ListTile(
               leading: const Icon(LucideIcons.qrCode),
-              title: const Text('Show QR Code'),
+              title: const Text('QR Code'),
               onTap: () {
                 Navigator.pop(context);
-                _showQRCode();
-              },
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.share2),
-              title: const Text('Share via...'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareViaSystem();
+                _showQRCode(context);
               },
             ),
           ],
@@ -352,105 +201,162 @@ class _ProfileActionButtonsState extends State<ProfileActionButtons>
     );
   }
 
-  void _handleMoreOptions() {
+  void _showUserOptions(BuildContext context) {
     showShadSheet(
       context: context,
       builder: (context) => ShadSheet(
-        title: Text(widget.isOwnProfile ? 'Profile Options' : 'User Options'),
+        title: const Text('User Options'),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!widget.isOwnProfile) ...[
+            ListTile(
+              leading: const Icon(LucideIcons.share),
+              title: const Text('Share Profile'),
+              onTap: () {
+                Navigator.pop(context);
+                _shareProfile(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.copy),
+              title: const Text('Copy Profile Link'),
+              onTap: () {
+                Navigator.pop(context);
+                _copyProfileLink(context);
+              },
+            ),
+            const Divider(),
+            if (followStatus?.isFollowing == true)
               ListTile(
-                leading: const Icon(LucideIcons.flag),
-                title: const Text('Report User'),
+                leading: const Icon(LucideIcons.bellOff),
+                title: const Text('Mute Notifications'),
                 onTap: () {
                   Navigator.pop(context);
-                  _reportUser();
+                  _muteUser(context);
                 },
               ),
-              ListTile(
-                leading: const Icon(LucideIcons.userX),
-                title: const Text('Block User'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _blockUser();
-                },
-              ),
-              ListTile(
-                leading: const Icon(LucideIcons.volumeX),
-                title: const Text('Mute User'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _muteUser();
-                },
-              ),
-            ] else ...[
-              ListTile(
-                leading: const Icon(LucideIcons.settings),
-                title: const Text('Privacy Settings'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openPrivacySettings();
-                },
-              ),
-              ListTile(
-                leading: const Icon(LucideIcons.eye),
-                title: const Text('View as Others'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _viewAsOthers();
-                },
-              ),
-              ListTile(
-                leading: const Icon(LucideIcons.download),
-                title: const Text('Download Data'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _downloadData();
-                },
-              ),
-            ],
+            ListTile(
+              leading: const Icon(LucideIcons.flag),
+              title: const Text('Report User'),
+              onTap: () {
+                Navigator.pop(context);
+                _reportUser(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.userX, color: Colors.red),
+              title:
+                  const Text('Block User', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _blockUser(context);
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
-  void _copyProfileLink() {
-    // Copy profile link to clipboard
-    context.showSuccessSnackBar(context,'Profile link copied to clipboard');
+  void _shareProfile(BuildContext context) {
+    // Implement profile sharing
+    context.showSuccessSnackBar(context, 'Profile link copied!');
   }
 
-  void _showQRCode() {
-    // Show QR code for profile
+  void _copyProfileLink(BuildContext context) {
+    // Implement copy profile link
+    context.showSuccessSnackBar(context, 'Profile link copied!');
   }
 
-  void _shareViaSystem() {
-    // Share via system share sheet
+  void _showQRCode(BuildContext context) {
+    // Implement QR code display
+    showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog(
+        title: const Text('Profile QR Code'),
+        description:
+            const Text('Others can scan this QR code to view your profile'),
+        child: Container(
+          width: 200,
+          height: 200,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: const Center(
+            child: Text('QR Code Placeholder'),
+          ),
+        ),
+      ),
+    );
   }
 
-  void _reportUser() {
-    // Show report dialog
+  void _muteUser(BuildContext context) {
+    // Implement mute user
+    context.showSuccessSnackBar(context, 'User muted');
   }
 
-  void _blockUser() {
-    // Show block confirmation dialog
+  void _reportUser(BuildContext context) {
+    // Implement report user
+    showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog(
+        title: const Text('Report User'),
+        description: const Text('Why are you reporting this user?'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Spam'),
+              onTap: () {
+                Navigator.pop(context);
+                context.showSuccessSnackBar(context, 'User reported for spam');
+              },
+            ),
+            ListTile(
+              title: const Text('Harassment'),
+              onTap: () {
+                Navigator.pop(context);
+                context.showSuccessSnackBar(
+                    context, 'User reported for harassment');
+              },
+            ),
+            ListTile(
+              title: const Text('Inappropriate content'),
+              onTap: () {
+                Navigator.pop(context);
+                context.showSuccessSnackBar(
+                    context, 'User reported for inappropriate content');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  void _muteUser() {
-    // Show mute confirmation dialog
-  }
-
-  void _openPrivacySettings() {
-    // Navigate to privacy settings
-  }
-
-  void _viewAsOthers() {
-    // Show profile as others see it
-  }
-
-  void _downloadData() {
-    // Initiate data download
+  void _blockUser(BuildContext context) {
+    // Implement block user
+    showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog(
+        title: const Text('Block User'),
+        description: Text('Are you sure you want to block @${user.username}?'),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ShadButton.destructive(
+            onPressed: () {
+              Navigator.pop(context);
+              context.showSuccessSnackBar(context, 'User blocked');
+            },
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
   }
 }
