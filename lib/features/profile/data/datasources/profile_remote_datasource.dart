@@ -230,24 +230,73 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
         },
       );
 
-      final apiResponse = ApiResponse<List<dynamic>>.fromJson(
+      print('Raw API Response for getUserPosts: ${response.data}');
+
+      final apiResponse = ApiResponse<dynamic>.fromJson(
         response.data,
-        (json) => json as List<dynamic>,
+        (json) => json,
       );
 
       if (apiResponse.success && apiResponse.data != null) {
-        return apiResponse.data!
-            .map((post) => PostModel.fromJson(post as Map<String, dynamic>))
-            .toList();
+        final dynamic data = apiResponse.data;
+
+        List<PostModel> posts = [];
+
+        if (data is List) {
+          // Handle direct list of posts
+          for (final postData in data) {
+            if (postData is Map<String, dynamic>) {
+              try {
+                final post = PostModel.fromJson(postData);
+                posts.add(post);
+              } catch (e) {
+                print('Error parsing individual post: $e');
+                print('Post data: $postData');
+                // Continue with other posts instead of failing completely
+              }
+            }
+          }
+        } else if (data is Map<String, dynamic>) {
+          // Handle wrapped response with posts array
+          if (data.containsKey('posts') && data['posts'] is List) {
+            final List postsArray = data['posts'] as List;
+            for (final postData in postsArray) {
+              if (postData is Map<String, dynamic>) {
+                try {
+                  final post = PostModel.fromJson(postData);
+                  posts.add(post);
+                } catch (e) {
+                  print('Error parsing individual post: $e');
+                  print('Post data: $postData');
+                  // Continue with other posts instead of failing completely
+                }
+              }
+            }
+          } else {
+            // Try to parse the data itself as a single post
+            try {
+              final post = PostModel.fromJson(data);
+              posts.add(post);
+            } catch (e) {
+              print('Error parsing post data as single post: $e');
+            }
+          }
+        }
+
+        print('Successfully parsed ${posts.length} posts');
+        return posts;
       } else {
         throw Exception(apiResponse.message ?? 'Failed to get user posts');
       }
     } on DioException catch (e) {
+      print('DioException in getUserPosts: ${e.message}');
+      print('Response data: ${e.response?.data}');
       if (e.response?.statusCode == 403) {
         throw Exception('Cannot view posts from private profile');
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
+      print('General exception in getUserPosts: $e');
       throw Exception('Failed to get user posts: $e');
     }
   }

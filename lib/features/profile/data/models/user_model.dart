@@ -35,43 +35,137 @@ class UserModel extends UserEntity {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      id: json['id'] as String,
-      email: json['email'] as String? ?? '',
-      username: json['username'] as String,
-      firstName: json['first_name'] as String?,
-      lastName: json['last_name'] as String?,
-      displayName: json['display_name'] as String?,
-      bio: json['bio'] as String?,
-      profilePicture:
-          json['profile_pic'] as String?,
-      coverPicture: json['cover_pic'] as String?,
-      website: json['website'] as String?,
-      location: json['location'] as String?,
-      dateOfBirth: json['date_of_birth'] != null
-          ? DateTime.parse(json['date_of_birth'] as String)
-          : null,
-      gender: json['gender'] as String?,
-      phone: json['phone'] as String?,
-      socialLinks: json['social_links'] != null
-          ? Map<String, String>.from(json['social_links'] as Map)
-          : null,
-      isVerified: json['is_verified'] as bool? ?? false,
-      isActive: json['is_active'] as bool? ??
-          true, // Default to active if not provided
-      isPremium: json['is_premium'] as bool? ?? false,
-      isPrivate: json['is_private'] as bool? ?? false,
-      followersCount: json['followers_count'] as int? ?? 0,
-      followingCount: json['following_count'] as int? ?? 0,
-      postsCount: json['posts_count'] as int? ?? 0,
-      friendsCount: json['friends_count'] as int? ?? 0,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : DateTime.now(), // Default to current time if not provided
-    );
+    try {
+      // Handle required fields with null safety
+      final String id = json['id']?.toString() ?? '';
+      final String email = json['email']?.toString() ?? '';
+      final String username = json['username']?.toString() ?? 'unknown_user';
+
+      // Handle optional string fields
+      String? firstName = json['first_name']?.toString();
+      if (firstName?.isEmpty == true) firstName = null;
+
+      String? lastName = json['last_name']?.toString();
+      if (lastName?.isEmpty == true) lastName = null;
+
+      String? displayName = json['display_name']?.toString();
+      if (displayName?.isEmpty == true) displayName = null;
+
+      String? bio = json['bio']?.toString();
+      if (bio?.isEmpty == true) bio = null;
+
+      String? profilePicture = json['profile_pic']?.toString() ??
+          json['profile_picture']?.toString();
+      if (profilePicture?.isEmpty == true) profilePicture = null;
+
+      String? coverPicture =
+          json['cover_pic']?.toString() ?? json['cover_picture']?.toString();
+      if (coverPicture?.isEmpty == true) coverPicture = null;
+
+      String? website = json['website']?.toString();
+      if (website?.isEmpty == true) website = null;
+
+      String? location = json['location']?.toString();
+      if (location?.isEmpty == true) location = null;
+
+      String? gender = json['gender']?.toString();
+      if (gender?.isEmpty == true) gender = null;
+
+      String? phone = json['phone']?.toString();
+      if (phone?.isEmpty == true) phone = null;
+
+      // Handle date of birth
+      DateTime? dateOfBirth;
+      if (json['date_of_birth'] != null) {
+        try {
+          final dobString = json['date_of_birth'].toString();
+          if (dobString.isNotEmpty && dobString != '0001-01-01T00:00:00Z') {
+            dateOfBirth = DateTime.parse(dobString);
+          }
+        } catch (e) {
+          print('Error parsing date_of_birth: $e');
+        }
+      }
+
+      // Handle social links
+      Map<String, String>? socialLinks;
+      if (json['social_links'] != null && json['social_links'] is Map) {
+        socialLinks = Map<String, String>.from(json['social_links'] as Map);
+      }
+
+      // Handle boolean fields with defaults
+      final bool isVerified = json['is_verified'] as bool? ?? false;
+      final bool isActive = json['is_active'] as bool? ?? true;
+      final bool isPremium = json['is_premium'] as bool? ?? false;
+      final bool isPrivate = json['is_private'] as bool? ?? false;
+
+      // Handle count fields
+      final int followersCount =
+          (json['followers_count'] as num?)?.toInt() ?? 0;
+      final int followingCount =
+          (json['following_count'] as num?)?.toInt() ?? 0;
+      final int postsCount = (json['posts_count'] as num?)?.toInt() ?? 0;
+      final int friendsCount = (json['friends_count'] as num?)?.toInt() ?? 0;
+
+      // Handle required dates
+      DateTime createdAt = DateTime.now();
+      if (json['created_at'] != null) {
+        try {
+          final createdAtString = json['created_at'].toString();
+          if (createdAtString.isNotEmpty &&
+              createdAtString != '0001-01-01T00:00:00Z') {
+            createdAt = DateTime.parse(createdAtString);
+          }
+        } catch (e) {
+          print('Error parsing created_at: $e');
+        }
+      }
+
+      DateTime updatedAt = createdAt;
+      if (json['updated_at'] != null) {
+        try {
+          final updatedAtString = json['updated_at'].toString();
+          if (updatedAtString.isNotEmpty &&
+              updatedAtString != '0001-01-01T00:00:00Z') {
+            updatedAt = DateTime.parse(updatedAtString);
+          }
+        } catch (e) {
+          print('Error parsing updated_at: $e');
+        }
+      }
+
+      return UserModel(
+        id: id,
+        email: email,
+        username: username,
+        firstName: firstName,
+        lastName: lastName,
+        displayName: displayName,
+        bio: bio,
+        profilePicture: profilePicture,
+        coverPicture: coverPicture,
+        website: website,
+        location: location,
+        dateOfBirth: dateOfBirth,
+        gender: gender,
+        phone: phone,
+        socialLinks: socialLinks,
+        isVerified: isVerified,
+        isActive: isActive,
+        isPremium: isPremium,
+        isPrivate: isPrivate,
+        followersCount: followersCount,
+        followingCount: followingCount,
+        postsCount: postsCount,
+        friendsCount: friendsCount,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      );
+    } catch (e) {
+      print('Error parsing UserModel from JSON: $e');
+      print('JSON data: $json');
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() => _$UserModelToJson(this);

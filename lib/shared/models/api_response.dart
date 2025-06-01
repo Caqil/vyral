@@ -30,6 +30,8 @@ class ApiResponse<T> {
       Map<String, dynamic>? errors;
       Map<String, dynamic>? meta;
 
+      print('🔍 Parsing ApiResponse from JSON: $json');
+
       // Check for explicit success field
       if (json.containsKey('success')) {
         success = json['success'] == true;
@@ -42,10 +44,35 @@ class ApiResponse<T> {
 
       // Extract data
       if (json.containsKey('data')) {
-        data = json['data'] != null ? fromJsonT(json['data']) : null;
+        final dataValue = json['data'];
+        print('🔍 Found data field: $dataValue');
+
+        if (dataValue != null) {
+          try {
+            data = fromJsonT(dataValue);
+          } catch (e) {
+            print('❌ Error parsing data field: $e');
+            // If parsing fails, try to return the raw data
+            if (T == dynamic) {
+              data = dataValue as T?;
+            } else {
+              rethrow;
+            }
+          }
+        }
       } else if (!json.containsKey('success') && !json.containsKey('status')) {
         // If no wrapper, treat the whole response as data
-        data = fromJsonT(json);
+        print('🔍 No wrapper found, treating whole response as data');
+        try {
+          data = fromJsonT(json);
+        } catch (e) {
+          print('❌ Error parsing whole response as data: $e');
+          if (T == dynamic) {
+            data = json as T?;
+          } else {
+            rethrow;
+          }
+        }
       }
 
       // Extract errors
@@ -53,10 +80,15 @@ class ApiResponse<T> {
         errors = json['errors'] as Map<String, dynamic>;
       }
 
-      // Extract meta
+      // Extract meta/pagination
       if (json['meta'] is Map<String, dynamic>) {
         meta = json['meta'] as Map<String, dynamic>;
+      } else if (json['pagination'] is Map<String, dynamic>) {
+        meta = json['pagination'] as Map<String, dynamic>;
       }
+
+      print(
+          '🔍 Parsed ApiResponse - success: $success, hasData: ${data != null}, message: $message');
 
       return ApiResponse<T>(
         success: success,
@@ -66,6 +98,8 @@ class ApiResponse<T> {
         meta: meta,
       );
     } catch (e) {
+      print('❌ Failed to parse API response: $e');
+      print('❌ JSON data: $json');
       throw FormatException('Failed to parse API response: $e');
     }
   }
