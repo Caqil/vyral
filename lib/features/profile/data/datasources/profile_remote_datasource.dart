@@ -194,6 +194,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
         throw Exception(apiResponse.message ?? 'Failed to follow user');
       }
     } catch (e) {
+      print(e.toString());
       throw Exception('Failed to follow user: $e');
     }
   }

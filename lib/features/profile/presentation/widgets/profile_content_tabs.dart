@@ -21,12 +21,12 @@ class ProfileContentTabs extends StatefulWidget {
   final List<MediaEntity> media;
   final bool isLoadingPosts;
   final bool isLoadingMedia;
-  final bool isOwnProfile; // Add this parameter
-  final String? currentUserId; // Add this parameter
+  final bool isOwnProfile;
+  final String? currentUserId;
   final Function(String) onPostPressed;
   final VoidCallback onLoadMorePosts;
   final VoidCallback onLoadMoreMedia;
-  final VoidCallback? onRefreshPosts; // Add refresh callback
+  final VoidCallback? onRefreshPosts;
 
   const ProfileContentTabs({
     super.key,
@@ -224,12 +224,15 @@ class _ProfileContentTabsState extends State<ProfileContentTabs>
           );
         }
 
-        // Show posts grid
+        // Show posts grid - FIXED: Added null safety and proper parameters
         return ProfilePostsList(
           posts: widget.posts,
           isLoading: widget.isLoadingPosts,
           onPostPressed: widget.onPostPressed,
           onLoadMore: widget.onLoadMorePosts,
+          authorName: widget.user.displayName,
+          authorUsername: widget.user.username,
+          authorAvatar: widget.user.profilePicture,
         );
       },
     );
@@ -256,14 +259,17 @@ class _ProfileContentTabsState extends State<ProfileContentTabs>
       );
     }
 
+    // FIXED: Better handling of media data
     return ProfileMediaGrid(
       media: widget.media,
       isLoading: widget.isLoadingMedia,
       onMediaPressed: (mediaId) {
-        // Handle media press
+        // Handle media press - could navigate to media viewer
+        // For now, just log the action
+        debugPrint('Media pressed: $mediaId');
       },
       onLoadMore: widget.onLoadMoreMedia,
-      hasMoreMedia: true,
+      hasMoreMedia: true, // This should come from state
     );
   }
 

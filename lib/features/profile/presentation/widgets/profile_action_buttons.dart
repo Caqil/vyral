@@ -104,6 +104,7 @@ class ProfileActionButtons extends StatelessWidget {
   }
 
   Widget _buildFollowButton(BuildContext context, ShadColorScheme colorScheme) {
+    // Show loading state
     if (isFollowLoading) {
       return ShadButton.outline(
         onPressed: null,
@@ -122,51 +123,8 @@ class ProfileActionButtons extends StatelessWidget {
       );
     }
 
-    // If no follow status loaded yet, show default follow button
-    if (followStatus == null) {
-      return ShadButton(
-        onPressed: onFollowPressed,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(LucideIcons.userPlus, size: 16),
-            const SizedBox(width: 8),
-            Text(user.isPrivate ? 'Request' : 'Follow'),
-          ],
-        ),
-      );
-    }
-
-    // Handle different follow states
-    if (followStatus!.isPending) {
-      return ShadButton.outline(
-        onPressed: onFollowPressed,
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LucideIcons.clock, size: 16),
-            SizedBox(width: 8),
-            Text('Requested'),
-          ],
-        ),
-      );
-    }
-
-    if (followStatus!.isFollowing) {
-      return ShadButton.outline(
-        onPressed: onFollowPressed,
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LucideIcons.userCheck, size: 16),
-            SizedBox(width: 8),
-            Text('Following'),
-          ],
-        ),
-      );
-    }
-
-    if (followStatus!.isBlocked) {
+    // Handle blocked state
+    if (followStatus?.isBlocked == true) {
       return ShadButton.destructive(
         onPressed: () => _showBlockedUserDialog(context),
         child: const Row(
@@ -180,18 +138,66 @@ class ProfileActionButtons extends StatelessWidget {
       );
     }
 
-    // Default follow button
+    // Handle pending follow request
+    if (followStatus?.isPending == true) {
+      return ShadButton.outline(
+        onPressed: onFollowPressed,
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(LucideIcons.clock, size: 16),
+            SizedBox(width: 8),
+            Text('Requested'),
+          ],
+        ),
+      );
+    }
+
+    // Handle following state - this is the key part for your issue
+    if (followStatus?.isFollowing == true) {
+      return ShadButton.outline(
+        onPressed: onFollowPressed, // This will trigger unfollow
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(LucideIcons.userCheck, size: 16),
+            SizedBox(width: 8),
+            Text('Following'),
+          ],
+        ),
+      );
+    }
+
+    // Default follow button - when not following or no follow status yet
     return ShadButton(
-      onPressed: onFollowPressed,
+      onPressed: onFollowPressed, // This will trigger follow
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(LucideIcons.userPlus, size: 16),
           const SizedBox(width: 8),
-          Text(user.isPrivate ? 'Request' : 'Follow'),
+          Text(_getFollowButtonText()),
         ],
       ),
     );
+  }
+
+  String _getFollowButtonText() {
+    // If we don't have follow status yet, check if user is private
+    if (followStatus == null) {
+      return user.isPrivate ? 'Request' : 'Follow';
+    }
+
+    // Based on follow status
+    if (followStatus!.isPending) {
+      return 'Requested';
+    } else if (followStatus!.isFollowing) {
+      return 'Following';
+    } else if (followStatus!.isBlocked) {
+      return 'Blocked';
+    } else {
+      return user.isPrivate ? 'Request' : 'Follow';
+    }
   }
 
   bool get _canMessage {
@@ -320,17 +326,14 @@ class ProfileActionButtons extends StatelessWidget {
   }
 
   void _shareProfile(BuildContext context) {
-    // Implement profile sharing
     context.showSuccessSnackBar(context, 'Profile link shared!');
   }
 
   void _copyProfileLink(BuildContext context) {
-    // Implement copy profile link
     context.showSuccessSnackBar(context, 'Profile link copied!');
   }
 
   void _showQRCode(BuildContext context) {
-    // Implement QR code display
     showShadDialog(
       context: context,
       builder: (context) => ShadDialog(
@@ -354,12 +357,10 @@ class ProfileActionButtons extends StatelessWidget {
   }
 
   void _muteUser(BuildContext context) {
-    // Implement mute user
     context.showSuccessSnackBar(context, 'User muted');
   }
 
   void _reportUser(BuildContext context) {
-    // Implement report user
     showShadDialog(
       context: context,
       builder: (context) => ShadDialog(
@@ -398,7 +399,6 @@ class ProfileActionButtons extends StatelessWidget {
   }
 
   void _blockUser(BuildContext context) {
-    // Implement block user
     showShadDialog(
       context: context,
       builder: (context) => ShadDialog(

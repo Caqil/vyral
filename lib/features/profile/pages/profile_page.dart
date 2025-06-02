@@ -81,27 +81,6 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
-  // Create skeleton user data for loading state
-  UserEntity get _skeletonUser => UserEntity(
-        id: 'skeleton',
-        email: 'skeleton@example.com',
-        username: 'skeleton_user',
-        displayName: 'Skeleton User Name',
-        bio:
-            'This is a skeleton bio text that shows while loading the actual user profile content.',
-        website: 'https://skeleton.example.com',
-        location: 'Skeleton City, SK',
-        profilePicture: null,
-        coverPicture: null,
-        isVerified: false,
-        isActive: true,
-        followersCount: 1234,
-        followingCount: 567,
-        postsCount: 89,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
@@ -111,24 +90,28 @@ class _ProfilePageState extends State<ProfilePage>
       listener: (context, state) {
         // Handle follow/unfollow success messages
         if (!state.isFollowLoading && state.followStatus != null) {
-          if (state.followStatus!.isFollowing) {
-            if (state.followStatus!.isPending) {
+          final followStatus = state.followStatus!;
+          final user = state.user;
+
+          if (user != null) {
+            if (followStatus.isFollowing) {
+              if (followStatus.isPending) {
+                context.showSuccessSnackBar(
+                  context,
+                  'Follow request sent to ${user.displayName ?? user.username}',
+                );
+              } else {
+                context.showSuccessSnackBar(
+                  context,
+                  'You are now following ${user.displayName ?? user.username}',
+                );
+              }
+            } else if (!followStatus.isFollowing && !followStatus.isPending) {
               context.showSuccessSnackBar(
                 context,
-                'Follow request sent to ${state.user?.displayName ?? state.user?.username}',
-              );
-            } else {
-              context.showSuccessSnackBar(
-                context,
-                'You are now following ${state.user?.displayName ?? state.user?.username}',
+                'You unfollowed ${user.displayName ?? user.username}',
               );
             }
-          } else if (!state.followStatus!.isFollowing &&
-              !state.followStatus!.isPending) {
-            context.showSuccessSnackBar(
-              context,
-              'You unfollowed ${state.user?.displayName ?? state.user?.username}',
-            );
           }
         }
 
@@ -320,17 +303,21 @@ class _ProfilePageState extends State<ProfilePage>
 
         const SizedBox(height: 16),
 
-        // Content Tabs
+        // Content Tabs - FIXED: Added missing parameters
         ProfileContentTabs(
           user: state.user!,
           posts: state.posts,
           media: state.media,
           isLoadingPosts: state.isLoadingPosts,
           isLoadingMedia: state.isLoadingMedia,
+          isOwnProfile: state.isOwnProfile, // FIXED: Added missing parameter
+          currentUserId: null, // Add if needed
           onPostPressed: _handlePostPressed,
           onLoadMorePosts: _handleLoadMorePosts,
           onLoadMoreMedia: _handleLoadMoreMedia,
-          isOwnProfile: state.isOwnProfile,
+          onRefreshPosts: () => context.read<ProfileBloc>().add(
+                ProfileRefreshRequested(),
+              ), // FIXED: Added missing parameter
         ),
 
         const SizedBox(height: 32),
@@ -354,7 +341,7 @@ class _ProfilePageState extends State<ProfilePage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (user.bio != null) ...[
+          if (user.bio != null && user.bio!.isNotEmpty) ...[
             Text(
               user.bio!,
               style: theme.textTheme.p.copyWith(
@@ -363,7 +350,7 @@ class _ProfilePageState extends State<ProfilePage>
             ),
             const SizedBox(height: 12),
           ],
-          if (user.website != null) ...[
+          if (user.website != null && user.website!.isNotEmpty) ...[
             _buildInfoRow(
               LucideIcons.globe,
               user.website!,
@@ -372,7 +359,7 @@ class _ProfilePageState extends State<ProfilePage>
               onTap: () => _launchUrl(user.website!),
             ),
           ],
-          if (user.location != null) ...[
+          if (user.location != null && user.location!.isNotEmpty) ...[
             _buildInfoRow(
               LucideIcons.mapPin,
               user.location!,
@@ -466,7 +453,7 @@ class _ProfilePageState extends State<ProfilePage>
       builder: (context) => ShadDialog(
         title: const Text('Unfollow User'),
         description: Text(
-          'Are you sure you want to unfollow @${state.user?.username}?',
+          'Are you sure you want to unfollow @${state.user?.username ?? 'this user'}?',
         ),
         actions: [
           ShadButton.outline(

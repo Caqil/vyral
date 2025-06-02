@@ -38,4 +38,29 @@ class FollowStatusEntity extends Equatable {
 
   bool get canFollow => !isFollowing && !isPending && !isBlocked;
   bool get canMessage => !isBlocked && (isFollowedBy || !isPending);
+
+  // Add copyWith method
+  FollowStatusEntity copyWith({
+    String? userId,
+    String? targetUserId,
+    bool? isFollowing,
+    bool? isFollowedBy,
+    bool? isPending,
+    bool? isBlocked,
+    bool? isMuted,
+    DateTime? followedAt,
+    DateTime? updatedAt,
+  }) {
+    return FollowStatusEntity(
+      userId: userId ?? this.userId,
+      targetUserId: targetUserId ?? this.targetUserId,
+      isFollowing: isFollowing ?? this.isFollowing,
+      isFollowedBy: isFollowedBy ?? this.isFollowedBy,
+      isPending: isPending ?? this.isPending,
+      isBlocked: isBlocked ?? this.isBlocked,
+      isMuted: isMuted ?? this.isMuted,
+      followedAt: followedAt ?? this.followedAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

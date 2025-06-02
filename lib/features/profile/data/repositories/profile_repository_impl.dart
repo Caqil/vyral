@@ -15,7 +15,7 @@ import '../datasources/profile_remote_datasource.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileRemoteDataSource remoteDataSource;
-  final String? Function() getCurrentUserId; // Function to get current user ID
+  final String? Function() getCurrentUserId;
 
   ProfileRepositoryImpl({
     required this.remoteDataSource,
@@ -31,8 +31,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
       UserModel user;
 
-      // FIXED: Clearer logic for determining which endpoint to use
-      // Only use current user endpoint if explicitly requesting current user OR if the userId matches current user
+      // Determine which endpoint to use
       final isRequestingCurrentUser = userId == 'current' ||
           (currentUserId != null && currentUserId == userId);
 
@@ -42,7 +41,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
       } else {
         AppLogger.debug(
             '🔄 Getting other user profile from public endpoint for userId: $userId');
-        // FIXED: Always use the public endpoint for other users
         user = await remoteDataSource.getUserProfile(userId);
       }
 
@@ -158,10 +156,31 @@ class ProfileRepositoryImpl implements ProfileRepository {
       final status = await remoteDataSource.followUser(userId);
       return Right(status);
     } on ServerException catch (e) {
+      AppLogger.debug(
+          '❌ FollowUser ServerException: ${e.message}, Status: ${e.statusCode}');
+
+      // Handle specific "already following" error (409)
+      if (e.statusCode == 409 ||
+          e.message.toLowerCase().contains('already following')) {
+        // Instead of returning an error, return a custom failure that indicates already following
+        return Left(
+            AlreadyFollowingFailure(message: 'Already following this user'));
+      }
+
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
+      AppLogger.debug('❌ FollowUser Exception: $e');
+
+      // Handle DioException with 409 status
+      final errorMessage = e.toString();
+      if (errorMessage.contains('409') ||
+          errorMessage.toLowerCase().contains('already following')) {
+        return Left(
+            AlreadyFollowingFailure(message: 'Already following this user'));
+      }
+
       return Left(ServerFailure(message: 'An unexpected error occurred: $e'));
     }
   }
@@ -180,10 +199,28 @@ class ProfileRepositoryImpl implements ProfileRepository {
       final status = await remoteDataSource.unfollowUser(userId);
       return Right(status);
     } on ServerException catch (e) {
+      AppLogger.debug(
+          '❌ UnfollowUser ServerException: ${e.message}, Status: ${e.statusCode}');
+
+      // Handle specific "not following" error (409 or 404)
+      if ((e.statusCode == 409 || e.statusCode == 404) ||
+          e.message.toLowerCase().contains('not following')) {
+        return Left(NotFollowingFailure(message: 'Not following this user'));
+      }
+
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } catch (e) {
+      AppLogger.debug('❌ UnfollowUser Exception: $e');
+
+      final errorMessage = e.toString();
+      if (errorMessage.contains('409') ||
+          errorMessage.contains('404') ||
+          errorMessage.toLowerCase().contains('not following')) {
+        return Left(NotFollowingFailure(message: 'Not following this user'));
+      }
+
       return Left(ServerFailure(message: 'An unexpected error occurred: $e'));
     }
   }
@@ -355,5 +392,16 @@ class NotFoundFailure extends Failure {
 
 class AuthenticationFailure extends Failure {
   const AuthenticationFailure({required String message})
+      : super(message: message);
+}
+
+// Add new failure types for follow/unfollow specific errors
+class AlreadyFollowingFailure extends Failure {
+  const AlreadyFollowingFailure({required String message})
+      : super(message: message);
+}
+
+class NotFollowingFailure extends Failure {
+  const NotFollowingFailure({required String message})
       : super(message: message);
 }
