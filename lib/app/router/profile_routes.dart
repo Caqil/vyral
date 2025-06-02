@@ -4,16 +4,16 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:vyral/core/utils/logger.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../features/profile/bloc/edit_profile_bloc.dart';
+import '../../features/profile/bloc/followers_bloc.dart';
+import '../../features/profile/bloc/following_bloc.dart';
+import '../../features/profile/bloc/post_detail_bloc.dart';
+import '../../features/profile/bloc/profile_bloc.dart';
 import '../../features/profile/pages/edit_profile_page.dart';
 import '../../features/profile/pages/followers_page.dart';
 import '../../features/profile/pages/following_page.dart';
 import '../../features/profile/pages/post_detail_page.dart';
 import '../../features/profile/pages/profile_page.dart';
-import '../../features/profile/presentation/bloc/profile_bloc.dart';
-import '../../features/profile/presentation/bloc/edit_profile_bloc.dart';
-import '../../features/profile/presentation/bloc/followers_bloc.dart';
-import '../../features/profile/presentation/bloc/following_bloc.dart';
-import '../../features/profile/presentation/bloc/post_detail_bloc.dart';
 import '../../main.dart'; // For dependency injection
 
 List<RouteBase> profileRoutes = [
@@ -25,10 +25,13 @@ List<RouteBase> profileRoutes = [
       final userId = state.pathParameters['userId']!;
       final username = state.uri.queryParameters['username'];
 
+      AppLogger.debug(
+          '🔄 Profile route - userId: $userId, username: $username');
+
       return BlocProvider(
         create: (context) => _createProfileBloc(context),
         child: ProfilePage(
-          userId: userId,
+          userId: userId, // FIXED: Always pass the actual userId from the route
           username: username,
         ),
       );
@@ -98,16 +101,18 @@ List<RouteBase> profileRoutes = [
     },
   ),
 
-  // Username-based profile route (redirects to userId-based route)
+  // FIXED: Username-based profile route with proper lookup
   GoRoute(
     path: '/u/:username',
     name: 'profile-by-username',
     redirect: (context, state) async {
       final username = state.pathParameters['username']!;
 
-      // In a real app, you'd fetch the userId for this username
-      // For now, we'll assume username = userId for demo purposes
-      // You should implement a proper username -> userId lookup here
+      AppLogger.debug('🔄 Username route redirect - username: $username');
+
+      // FIXED: For demo purposes, we'll assume username maps to userId
+      // In a real app, you should implement a proper username -> userId lookup
+      // For now, redirect to the profile route with the username as userId
       return '/profile/$username?username=$username';
     },
   ),

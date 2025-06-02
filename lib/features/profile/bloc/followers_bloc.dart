@@ -1,9 +1,9 @@
-// lib/features/profile/presentation/bloc/followers_bloc.dart
+
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:vyral/features/profile/presentation/bloc/follower_event.dart';
-import 'package:vyral/features/profile/presentation/bloc/follower_state.dart';
-import '../../domain/usecases/get_followers_usecase.dart';
-import '../../domain/entities/user_entity.dart';
+
+import '../domain/usecases/get_followers_usecase.dart';
+import 'follower_event.dart';
+import 'follower_state.dart';
 
 class FollowersBloc extends Bloc<FollowersEvent, FollowersState> {
   final GetFollowersUseCase getFollowers;

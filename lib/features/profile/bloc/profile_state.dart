@@ -1,11 +1,10 @@
 import 'package:vyral/features/profile/domain/entities/user_entity.dart';
-import 'package:vyral/features/profile/presentation/bloc/profile_bloc.dart';
-
-import '../../domain/entities/follow_status_entity.dart';
-import '../../domain/entities/media_entity.dart';
-import '../../domain/entities/post_entity.dart';
-import '../../domain/entities/story_highlight_entity.dart';
-import '../../domain/entities/user_stats_entity.dart';
+import '../domain/entities/follow_status_entity.dart';
+import '../domain/entities/media_entity.dart';
+import '../domain/entities/post_entity.dart';
+import '../domain/entities/story_highlight_entity.dart';
+import '../domain/entities/user_stats_entity.dart';
+import 'profile_bloc.dart';
 
 class ProfileState {
   final UserEntity? user;
@@ -19,7 +18,7 @@ class ProfileState {
   final bool isRefreshing;
   final bool isLoadingPosts;
   final bool isLoadingMedia;
-  final bool isFollowLoading;
+  final bool isFollowLoading; // Add this field
   final bool hasError;
   final String? errorMessage;
   final ProfileErrorType? errorType;
@@ -41,7 +40,7 @@ class ProfileState {
     this.isRefreshing = false,
     this.isLoadingPosts = false,
     this.isLoadingMedia = false,
-    this.isFollowLoading = false,
+    this.isFollowLoading = false, // Add this field
     this.hasError = false,
     this.errorMessage,
     this.errorType,
@@ -64,7 +63,7 @@ class ProfileState {
     bool? isRefreshing,
     bool? isLoadingPosts,
     bool? isLoadingMedia,
-    bool? isFollowLoading,
+    bool? isFollowLoading, // Add this field
     bool? hasError,
     String? errorMessage,
     ProfileErrorType? errorType,
@@ -86,7 +85,8 @@ class ProfileState {
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isLoadingPosts: isLoadingPosts ?? this.isLoadingPosts,
       isLoadingMedia: isLoadingMedia ?? this.isLoadingMedia,
-      isFollowLoading: isFollowLoading ?? this.isFollowLoading,
+      isFollowLoading:
+          isFollowLoading ?? this.isFollowLoading, // Add this field
       hasError: hasError ?? this.hasError,
       errorMessage: errorMessage,
       errorType: errorType ?? this.errorType,

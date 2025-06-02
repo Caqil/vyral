@@ -1,9 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:vyral/features/profile/presentation/bloc/following_event.dart';
-import 'package:vyral/features/profile/presentation/bloc/following_state.dart';
-
-import '../../domain/usecases/get_following_usecase.dart';
-import '../../domain/usecases/unfollow_user_usecase.dart';
+import '../domain/usecases/get_following_usecase.dart';
+import '../domain/usecases/unfollow_user_usecase.dart';
+import 'following_event.dart';
+import 'following_state.dart';
 
 class FollowingBloc extends Bloc<FollowingEvent, FollowingState> {
   final GetFollowingUseCase getFollowing;

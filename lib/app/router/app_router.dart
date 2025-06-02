@@ -13,8 +13,8 @@ import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/verify_email_page.dart';
+import '../../features/profile/bloc/profile_bloc.dart';
 import '../../features/profile/pages/profile_page.dart';
-import '../../features/profile/presentation/bloc/profile_bloc.dart';
 import '../../main.dart'; // For dependency injection
 import 'route_names.dart';
 import 'profile_routes.dart';
@@ -181,7 +181,6 @@ class AppRouter {
             ],
           ),
 
-          // Current user profile route (inside shell)
           GoRoute(
             path: RouteNames.profile,
             name: 'current-user-profile',
@@ -189,8 +188,12 @@ class AppRouter {
               // Get current user ID from AuthBloc
               final authBloc = context.read<AuthBloc>();
               final currentUserId = authBloc.state.user?.id;
+              final currentUsername = authBloc.state.user?.username;
 
-              if (currentUserId == null) {
+              AppLogger.debug(
+                  '🔄 Current user profile route - userId: $currentUserId');
+
+              if (currentUserId == null || currentUserId.isEmpty) {
                 // If no current user, redirect to login
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   context.push(RouteNames.login);
@@ -205,8 +208,8 @@ class AppRouter {
               return BlocProvider(
                 create: (context) => _createProfileBloc(),
                 child: ProfilePage(
-                  userId: currentUserId,
-                  username: authBloc.state.user?.username,
+                  userId: currentUserId, // Use actual current user ID
+                  username: currentUsername,
                 ),
               );
             },
@@ -409,7 +412,7 @@ class _MainShellState extends State<MainShell> {
         onTap: (index) {
           if (index != _currentIndex) {
             final route = _navigationItems[index].route;
-            context.push(route);
+            context.go(route);
           }
         },
       ),

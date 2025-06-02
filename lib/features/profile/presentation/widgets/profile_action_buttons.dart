@@ -13,6 +13,7 @@ class ProfileActionButtons extends StatelessWidget {
   final VoidCallback? onMessagePressed;
   final VoidCallback? onEditPressed;
   final bool isPrivateView;
+  final bool isFollowLoading;
 
   const ProfileActionButtons({
     super.key,
@@ -23,6 +24,7 @@ class ProfileActionButtons extends StatelessWidget {
     this.onMessagePressed,
     this.onEditPressed,
     this.isPrivateView = false,
+    this.isFollowLoading = false,
   });
 
   @override
@@ -46,7 +48,7 @@ class ProfileActionButtons extends StatelessWidget {
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(LucideIcons.pen, size: 16),
+                Icon(LucideIcons.settings, size: 16),
                 SizedBox(width: 8),
                 Text('Edit Profile'),
               ],
@@ -102,6 +104,25 @@ class ProfileActionButtons extends StatelessWidget {
   }
 
   Widget _buildFollowButton(BuildContext context, ShadColorScheme colorScheme) {
+    if (isFollowLoading) {
+      return ShadButton.outline(
+        onPressed: null,
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 8),
+            Text('Loading...'),
+          ],
+        ),
+      );
+    }
+
+    // If no follow status loaded yet, show default follow button
     if (followStatus == null) {
       return ShadButton(
         onPressed: onFollowPressed,
@@ -116,6 +137,7 @@ class ProfileActionButtons extends StatelessWidget {
       );
     }
 
+    // Handle different follow states
     if (followStatus!.isPending) {
       return ShadButton.outline(
         onPressed: onFollowPressed,
@@ -144,6 +166,21 @@ class ProfileActionButtons extends StatelessWidget {
       );
     }
 
+    if (followStatus!.isBlocked) {
+      return ShadButton.destructive(
+        onPressed: () => _showBlockedUserDialog(context),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(LucideIcons.userX, size: 16),
+            SizedBox(width: 8),
+            Text('Blocked'),
+          ],
+        ),
+      );
+    }
+
+    // Default follow button
     return ShadButton(
       onPressed: onFollowPressed,
       child: Row(
@@ -258,9 +295,33 @@ class ProfileActionButtons extends StatelessWidget {
     );
   }
 
+  void _showBlockedUserDialog(BuildContext context) {
+    showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog(
+        title: const Text('User Blocked'),
+        description: Text(
+            'You have blocked @${user.username}. You cannot follow or message them until you unblock them.'),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+          ShadButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Add unblock functionality
+            },
+            child: const Text('Unblock'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _shareProfile(BuildContext context) {
     // Implement profile sharing
-    context.showSuccessSnackBar(context, 'Profile link copied!');
+    context.showSuccessSnackBar(context, 'Profile link shared!');
   }
 
   void _copyProfileLink(BuildContext context) {

@@ -22,7 +22,7 @@ class CoverPictureEditor extends StatelessWidget {
       children: [
         Text(
           'Cover Photo',
-          style: theme.textTheme.large?.copyWith(
+          style: theme.textTheme.large.copyWith(
             color: colorScheme.foreground,
             fontWeight: FontWeight.w600,
           ),
@@ -125,7 +125,7 @@ class CoverPictureEditor extends StatelessWidget {
 
         Text(
           'Recommended: 1500x500 pixels',
-          style: theme.textTheme.small?.copyWith(
+          style: theme.textTheme.small.copyWith(
             color: colorScheme.mutedForeground,
           ),
         ),

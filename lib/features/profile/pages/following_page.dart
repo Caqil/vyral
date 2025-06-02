@@ -8,10 +8,10 @@ import '../../../core/widgets/custom_app_bar.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
+import '../bloc/following_bloc.dart';
+import '../bloc/following_event.dart';
+import '../bloc/following_state.dart';
 import '../domain/entities/user_entity.dart';
-import '../presentation/bloc/following_bloc.dart';
-import '../presentation/bloc/following_event.dart';
-import '../presentation/bloc/following_state.dart';
 import '../presentation/widgets/user_list_item.dart';
 
 class FollowingPage extends StatefulWidget {

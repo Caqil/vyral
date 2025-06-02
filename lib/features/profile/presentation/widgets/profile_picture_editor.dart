@@ -26,7 +26,7 @@ class ProfilePictureEditor extends StatelessWidget {
       children: [
         Text(
           'Profile Picture',
-          style: theme.textTheme.large?.copyWith(
+          style: theme.textTheme.large.copyWith(
             color: colorScheme.foreground,
             fontWeight: FontWeight.w600,
           ),
@@ -109,7 +109,7 @@ class ProfilePictureEditor extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Recommended: Square image, at least 400x400 pixels',
-          style: theme.textTheme.small?.copyWith(
+          style: theme.textTheme.small.copyWith(
             color: colorScheme.mutedForeground,
           ),
         ),

@@ -66,6 +66,7 @@ dependencies:
   dartz: ^0.10.1
   jwt_decoder: ^2.0.1
   get_it: ^8.0.3
+  skeletonizer: ^2.0.1
 
 dev_dependencies:
   flutter_test:

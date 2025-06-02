@@ -1,14 +1,15 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:vyral/core/utils/logger.dart';
+import 'package:vyral/features/profile/domain/entities/user_entity.dart';
 
-import '../../domain/usecases/follow_user_usecase.dart';
-import '../../domain/usecases/get_follow_status_usecase.dart';
-import '../../domain/usecases/get_user_media_usecase.dart';
-import '../../domain/usecases/get_user_posts_usecase.dart';
-import '../../domain/usecases/get_user_profile_usecase.dart';
-import '../../domain/usecases/get_user_stats_usecase.dart';
-import '../../domain/usecases/unfollow_user_usecase.dart';
-import '../../data/repositories/profile_repository_impl.dart';
+import '../data/repositories/profile_repository_impl.dart';
+import '../domain/usecases/follow_user_usecase.dart';
+import '../domain/usecases/get_follow_status_usecase.dart';
+import '../domain/usecases/get_user_media_usecase.dart';
+import '../domain/usecases/get_user_posts_usecase.dart';
+import '../domain/usecases/get_user_profile_usecase.dart';
+import '../domain/usecases/get_user_stats_usecase.dart';
+import '../domain/usecases/unfollow_user_usecase.dart';
 import 'profile_event.dart';
 import 'profile_state.dart';
 
@@ -40,6 +41,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<ProfileLoadMoreMediaRequested>(_onProfileLoadMoreMediaRequested);
     on<ProfileUpdateRequested>(_onProfileUpdateRequested);
   }
+
   Future<void> _onProfileLoadRequested(
     ProfileLoadRequested event,
     Emitter<ProfileState> emit,
@@ -56,12 +58,16 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       AppLogger.debug('Debug - Current User ID: $currentUserId');
       AppLogger.debug('Debug - Requested User ID: ${event.userId}');
 
-      // Check if it's own profile
-      final isOwnProfile =
-          currentUserId != null && currentUserId == event.userId;
+      // FIXED: Clearer logic for determining if it's own profile
+      // Only consider it "own profile" if we have a current user AND the IDs match
+      final isOwnProfile = currentUserId != null &&
+          currentUserId.isNotEmpty &&
+          currentUserId == event.userId;
+
       AppLogger.debug('Debug - Is Own Profile: $isOwnProfile');
 
-      // Load user profile
+      // FIXED: Always pass the actual userId to the repository
+      // Let the repository decide which endpoint to use based on the userId
       final profileResult = await getUserProfile(event.userId);
 
       await profileResult.fold(
@@ -100,10 +106,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           AppLogger.debug('Debug - User loaded: ${user.username}');
           AppLogger.debug('Debug - User is private: ${user.isPrivate}');
 
-          // Load additional data based on profile accessibility
+          // FIXED: Determine content visibility more clearly
           // For public profiles or own profile, load all data
           // For private profiles that user doesn't follow, only load follow status
-          final canViewContent = isOwnProfile || !user.isPrivate;
+          final canViewContent = isOwnProfile ||
+              !user.isPrivate ||
+              (currentUserId != null); // Add follow status check later
+
           AppLogger.debug('Debug - Can view content: $canViewContent');
 
           if (canViewContent) {
@@ -117,7 +126,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           } else {
             AppLogger.debug('Debug - Loading limited profile data...');
             // For private profiles, only load follow status if we have a current user
-            if (currentUserId != null) {
+            if (currentUserId != null && currentUserId.isNotEmpty) {
               await _loadFollowStatus(user.id, emit, isOwnProfile);
             }
           }
@@ -185,64 +194,132 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     ProfileFollowRequested event,
     Emitter<ProfileState> emit,
   ) async {
-    if (state.followStatus == null || state.isOwnProfile) return;
+    if (state.isOwnProfile) {
+      AppLogger.debug('Cannot follow own profile');
+      return;
+    }
 
+    AppLogger.debug(
+        '🔄 ProfileBloc: Follow requested for user ${event.userId}');
     emit(state.copyWith(isFollowLoading: true));
 
-    final result = await followUser(event.userId);
+    try {
+      final result = await followUser(event.userId);
 
-    result.fold(
-      (failure) {
-        emit(state.copyWith(
-          isFollowLoading: false,
-          errorMessage: failure.message,
-        ));
-      },
-      (followStatus) {
-        emit(state.copyWith(
-          isFollowLoading: false,
-          followStatus: followStatus,
-          // Update follower count optimistically only if not pending
-          user: followStatus.isFollowing && !followStatus.isPending
-              ? state.user?.copyWith(
-                  followersCount: state.user!.followersCount + 1,
-                )
-              : state.user,
-        ));
-      },
-    );
+      result.fold(
+        (failure) {
+          AppLogger.debug('❌ ProfileBloc: Follow failed: ${failure.message}');
+          emit(state.copyWith(
+            isFollowLoading: false,
+            hasError: true,
+            errorMessage: failure.message,
+          ));
+
+          // Clear error after 3 seconds
+          Future.delayed(const Duration(seconds: 3), () {
+            if (!emit.isDone) {
+              emit(state.copyWith(hasError: false, errorMessage: null));
+            }
+          });
+        },
+        (followStatus) {
+          AppLogger.debug('✅ ProfileBloc: Follow successful');
+
+          // Update follower count optimistically
+          UserEntity? updatedUser = state.user;
+          if (followStatus.isFollowing && !followStatus.isPending) {
+            updatedUser = state.user?.copyWith(
+              followersCount: state.user!.followersCount + 1,
+            );
+          }
+
+          emit(state.copyWith(
+            isFollowLoading: false,
+            followStatus: followStatus,
+            user: updatedUser,
+            hasError: false,
+            errorMessage: null,
+          ));
+
+          AppLogger.debug(
+              '📊 Follow status updated - Following: ${followStatus.isFollowing}, Pending: ${followStatus.isPending}');
+        },
+      );
+    } catch (e) {
+      AppLogger.debug('❌ ProfileBloc: Follow exception: $e');
+      emit(state.copyWith(
+        isFollowLoading: false,
+        hasError: true,
+        errorMessage: 'An unexpected error occurred',
+      ));
+    }
   }
 
   Future<void> _onProfileUnfollowRequested(
     ProfileUnfollowRequested event,
     Emitter<ProfileState> emit,
   ) async {
-    if (state.followStatus == null || state.isOwnProfile) return;
+    if (state.isOwnProfile) {
+      AppLogger.debug('Cannot unfollow own profile');
+      return;
+    }
 
+    AppLogger.debug(
+        '🔄 ProfileBloc: Unfollow requested for user ${event.userId}');
     emit(state.copyWith(isFollowLoading: true));
 
-    final result = await unfollowUser(event.userId);
+    try {
+      final result = await unfollowUser(event.userId);
 
-    result.fold(
-      (failure) {
-        emit(state.copyWith(
-          isFollowLoading: false,
-          errorMessage: failure.message,
-        ));
-      },
-      (followStatus) {
-        emit(state.copyWith(
-          isFollowLoading: false,
-          followStatus: followStatus,
+      result.fold(
+        (failure) {
+          AppLogger.debug('❌ ProfileBloc: Unfollow failed: ${failure.message}');
+          emit(state.copyWith(
+            isFollowLoading: false,
+            hasError: true,
+            errorMessage: failure.message,
+          ));
+
+          // Clear error after 3 seconds
+          Future.delayed(const Duration(seconds: 3), () {
+            if (!emit.isDone) {
+              emit(state.copyWith(hasError: false, errorMessage: null));
+            }
+          });
+        },
+        (followStatus) {
+          AppLogger.debug('✅ ProfileBloc: Unfollow successful');
+
           // Update follower count optimistically
-          user: state.user?.copyWith(
-            followersCount: (state.user!.followersCount - 1)
-                .clamp(0, double.infinity)
-                .toInt(),
-          ),
-        ));
-      },
-    );
+          UserEntity? updatedUser = state.user;
+          if (!followStatus.isFollowing) {
+            updatedUser = state.user?.copyWith(
+              followersCount: (state.user!.followersCount - 1)
+                  .clamp(0, double.infinity)
+                  .toInt(),
+            );
+          }
+
+          emit(state.copyWith(
+            isFollowLoading: false,
+            followStatus: followStatus,
+            user: updatedUser,
+            hasError: false,
+            errorMessage: null,
+          ));
+
+          AppLogger.debug(
+              '📊 Unfollow status updated - Following: ${followStatus.isFollowing}');
+        },
+      );
+    } catch (e) {
+      AppLogger.debug('❌ ProfileBloc: Unfollow exception: $e');
+      emit(state.copyWith(
+        isFollowLoading: false,
+        hasError: true,
+        errorMessage: 'An unexpected error occurred',
+      ));
+    }
   }
 
   Future<void> _onProfileLoadMorePostsRequested(

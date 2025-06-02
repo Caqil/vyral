@@ -8,6 +8,7 @@ part of 'media_model.dart';
 
 MediaModel _$MediaModelFromJson(Map<String, dynamic> json) => MediaModel(
       id: json['id'] as String,
+      userId: json['userId'] as String,
       url: json['url'] as String,
       type: json['type'] as String,
       mimeType: json['mimeType'] as String?,
@@ -19,11 +20,10 @@ MediaModel _$MediaModelFromJson(Map<String, dynamic> json) => MediaModel(
       description: json['description'] as String?,
       thumbnailUrl: json['thumbnailUrl'] as String?,
       isPublic: json['isPublic'] as bool? ?? true,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-      userId: json['userId'] as String,
       relatedTo: json['relatedTo'] as String?,
       relatedId: json['relatedId'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
 
 Map<String, dynamic> _$MediaModelToJson(MediaModel instance) =>

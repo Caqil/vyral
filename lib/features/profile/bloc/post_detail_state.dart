@@ -1,6 +1,9 @@
-import '../../data/models/comment_model.dart';
-import '../../domain/entities/post_entity.dart';
-import '../../domain/entities/user_entity.dart';
+
+
+import 'package:vyral/features/profile/domain/entities/user_entity.dart';
+
+import '../data/models/comment_model.dart';
+import '../domain/entities/post_entity.dart';
 
 class PostDetailState {
   final PostEntity? post;

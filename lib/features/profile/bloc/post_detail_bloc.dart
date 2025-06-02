@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:vyral/features/profile/data/models/comment_model.dart';
 import 'package:vyral/features/profile/domain/entities/post_entity.dart';
 import 'package:vyral/features/profile/domain/usecases/get_post_usecase.dart';
 import 'package:vyral/features/profile/domain/usecases/get_post_comments_usecase.dart';
@@ -6,7 +7,6 @@ import 'package:vyral/features/profile/domain/usecases/like_post_usecase.dart';
 import 'package:vyral/features/profile/domain/usecases/create_comment_usecase.dart';
 import 'package:vyral/features/profile/domain/usecases/like_comment_usecase.dart';
 
-import '../../data/models/comment_model.dart';
 import 'post_detail_event.dart';
 import 'post_detail_state.dart';
 

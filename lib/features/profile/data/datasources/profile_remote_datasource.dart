@@ -3,7 +3,8 @@ import 'package:vyral/features/profile/data/models/follow_status_model.dart';
 import 'package:vyral/features/profile/data/models/post_model.dart';
 import 'package:vyral/features/profile/data/models/story_highlight_model.dart';
 import 'package:vyral/features/profile/data/models/user_stats_model.dart';
-import 'package:vyral/shared/models/media_model.dart';
+// CHANGE: Import the profile-specific MediaModel instead of shared one
+import 'package:vyral/features/profile/data/models/media_model.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../shared/models/api_response.dart';
@@ -386,9 +387,14 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       );
 
       if (apiResponse.success && apiResponse.data != null) {
-        return apiResponse.data!
-            .map((user) => UserModel.fromJson(user as Map<String, dynamic>))
-            .toList();
+        return apiResponse.data!.map((followRelation) {
+          // Extract the 'follower' object from each follow relationship
+          final followerData = followRelation['follower'];
+          if (followerData == null || followerData is! Map<String, dynamic>) {
+            throw Exception('Invalid follower data structure');
+          }
+          return UserModel.fromJson(followerData);
+        }).toList();
       } else {
         throw Exception(apiResponse.message ?? 'Failed to get followers');
       }
@@ -420,9 +426,14 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       );
 
       if (apiResponse.success && apiResponse.data != null) {
-        return apiResponse.data!
-            .map((user) => UserModel.fromJson(user as Map<String, dynamic>))
-            .toList();
+        return apiResponse.data!.map((followRelation) {
+          // Extract the 'followee' object from each follow relationship
+          final followeeData = followRelation['followee'];
+          if (followeeData == null || followeeData is! Map<String, dynamic>) {
+            throw Exception('Invalid followee data structure');
+          }
+          return UserModel.fromJson(followeeData);
+        }).toList();
       } else {
         throw Exception(apiResponse.message ?? 'Failed to get following');
       }

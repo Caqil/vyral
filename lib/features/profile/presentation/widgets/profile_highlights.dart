@@ -78,7 +78,7 @@ class ProfileHighlights extends StatelessWidget {
                     width: 64,
                     child: Text(
                       highlight.title,
-                      style: theme.textTheme.small?.copyWith(
+                      style: theme.textTheme.small.copyWith(
                         color: colorScheme.foreground,
                       ),
                       textAlign: TextAlign.center,

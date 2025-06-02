@@ -10,9 +10,9 @@ import '../../../../core/widgets/error_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/utils/extensions.dart';
 import '../../../core/utils/logger.dart';
-import '../presentation/bloc/follower_event.dart';
-import '../presentation/bloc/follower_state.dart';
-import '../presentation/bloc/followers_bloc.dart';
+import '../bloc/follower_event.dart';
+import '../bloc/follower_state.dart';
+import '../bloc/followers_bloc.dart';
 import '../presentation/widgets/user_list_item.dart';
 
 class FollowersPage extends StatefulWidget {
@@ -109,6 +109,7 @@ class _FollowersPageState extends State<FollowersPage> {
           }
 
           if (state.hasError && state.followers.isEmpty) {
+            AppLogger.debug(state.errorMessage!);
             return CustomErrorWidget(
               title: 'Failed to Load',
               message: state.errorMessage ?? 'Failed to load followers',

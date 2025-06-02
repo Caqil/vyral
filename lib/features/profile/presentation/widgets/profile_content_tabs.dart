@@ -7,11 +7,11 @@ import '../../../../core/utils/extensions.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/error_widget.dart';
+import '../../bloc/profile_bloc.dart';
+import '../../bloc/profile_state.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/entities/post_entity.dart';
 import '../../domain/entities/media_entity.dart';
-import '../bloc/profile_bloc.dart';
-import '../bloc/profile_state.dart';
 import 'profile_about_section.dart';
 import 'profile_posts_list.dart';
 
@@ -108,7 +108,7 @@ class _ProfileContentTabsState extends State<ProfileContentTabs>
         ),
         labelColor: colorScheme.primaryForeground,
         unselectedLabelColor: colorScheme.mutedForeground,
-        labelStyle: theme.textTheme.small?.copyWith(
+        labelStyle: theme.textTheme.small.copyWith(
           fontWeight: FontWeight.w600,
         ),
         unselectedLabelStyle: theme.textTheme.small,

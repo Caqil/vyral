@@ -162,7 +162,7 @@ class _ProfileStatsState extends State<ProfileStats>
                   children: [
                     Text(
                       count,
-                      style: theme.textTheme.h4?.copyWith(
+                      style: theme.textTheme.h4.copyWith(
                         color: colorScheme.foreground,
                         fontWeight: FontWeight.bold,
                       ),
@@ -170,7 +170,7 @@ class _ProfileStatsState extends State<ProfileStats>
                     const SizedBox(height: 4),
                     Text(
                       label,
-                      style: theme.textTheme.small?.copyWith(
+                      style: theme.textTheme.small.copyWith(
                         color: colorScheme.mutedForeground,
                       ),
                     ),
@@ -278,14 +278,14 @@ class _ProfileStatsState extends State<ProfileStats>
         const SizedBox(height: 4),
         Text(
           value,
-          style: theme.textTheme.small?.copyWith(
+          style: theme.textTheme.small.copyWith(
             color: colorScheme.foreground,
             fontWeight: FontWeight.w600,
           ),
         ),
         Text(
           label,
-          style: theme.textTheme.small?.copyWith(
+          style: theme.textTheme.small.copyWith(
             color: colorScheme.mutedForeground,
             fontSize: 10,
           ),
@@ -315,7 +315,7 @@ class _ProfileStatsState extends State<ProfileStats>
         const SizedBox(width: 4),
         Text(
           '${isPositive ? '+' : ''}${growthPercentage.toStringAsFixed(1)}%',
-          style: theme.textTheme.small?.copyWith(
+          style: theme.textTheme.small.copyWith(
             color: color,
             fontWeight: FontWeight.w600,
           ),
@@ -323,7 +323,7 @@ class _ProfileStatsState extends State<ProfileStats>
         const SizedBox(width: 4),
         Text(
           period,
-          style: theme.textTheme.small?.copyWith(
+          style: theme.textTheme.small.copyWith(
             color: colorScheme.mutedForeground,
             fontSize: 10,
           ),
@@ -414,7 +414,7 @@ class _ProfileStatsState extends State<ProfileStats>
           const SizedBox(width: 6),
           Text(
             label,
-            style: theme.textTheme.small?.copyWith(
+            style: theme.textTheme.small.copyWith(
               color: chipColor,
               fontSize: 11,
               fontWeight: FontWeight.w500,

@@ -31,16 +31,18 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
       UserModel user;
 
-      // Check if requesting own profile or another user's profile
-      // Special case: if userId is 'current', always use current user profile endpoint
-      if (userId == 'current' ||
-          (currentUserId != null && currentUserId == userId)) {
+      // FIXED: Clearer logic for determining which endpoint to use
+      // Only use current user endpoint if explicitly requesting current user OR if the userId matches current user
+      final isRequestingCurrentUser = userId == 'current' ||
+          (currentUserId != null && currentUserId == userId);
+
+      if (isRequestingCurrentUser) {
         AppLogger.debug('🔄 Getting current user profile from auth endpoint');
-        // Get current user's profile using auth endpoint
         user = await remoteDataSource.getCurrentUserProfile();
       } else {
-        AppLogger.debug('🔄 Getting other user profile from public endpoint');
-        // Get other user's profile using public endpoint
+        AppLogger.debug(
+            '🔄 Getting other user profile from public endpoint for userId: $userId');
+        // FIXED: Always use the public endpoint for other users
         user = await remoteDataSource.getUserProfile(userId);
       }
 
@@ -221,7 +223,12 @@ class ProfileRepositoryImpl implements ProfileRepository {
     try {
       final media =
           await remoteDataSource.getUserMedia(userId, page, limit, type);
-      return Right(media.cast<MediaEntity>());
+
+      // Convert MediaModel list to MediaEntity list explicitly
+      final List<MediaEntity> mediaEntities =
+          media.map<MediaEntity>((mediaModel) => mediaModel).toList();
+
+      return Right(mediaEntities);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {

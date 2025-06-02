@@ -1,9 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:vyral/core/utils/logger.dart';
-import '../../domain/usecases/get_user_profile_usecase.dart';
-import '../../domain/usecases/update_profile_usecase.dart';
-import '../../domain/usecases/upload_cover_picture_usecase.dart';
-import '../../domain/usecases/upload_profile_picture_usecase.dart';
+import '../domain/usecases/get_user_profile_usecase.dart';
+import '../domain/usecases/update_profile_usecase.dart';
+import '../domain/usecases/upload_cover_picture_usecase.dart';
+import '../domain/usecases/upload_profile_picture_usecase.dart';
 import 'edit_profile_event.dart';
 import 'edit_profile_state.dart' as edit;
 

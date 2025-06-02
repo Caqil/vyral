@@ -164,7 +164,7 @@ class ProfileHeader extends StatelessWidget {
             Expanded(
               child: Text(
                 user.displayName ?? user.username,
-                style: theme.textTheme.h3?.copyWith(
+                style: theme.textTheme.h3.copyWith(
                   color: colorScheme.foreground,
                   fontWeight: FontWeight.bold,
                 ),
@@ -185,7 +185,7 @@ class ProfileHeader extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           '@${user.username}',
-          style: theme.textTheme.large?.copyWith(
+          style: theme.textTheme.large.copyWith(
             color: colorScheme.mutedForeground,
           ),
         ),
@@ -209,7 +209,7 @@ class ProfileHeader extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   'Premium',
-                  style: theme.textTheme.small?.copyWith(
+                  style: theme.textTheme.small.copyWith(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -230,7 +230,7 @@ class ProfileHeader extends StatelessWidget {
         if (user.bio != null && user.bio!.isNotEmpty) ...[
           Text(
             user.bio!,
-            style: theme.textTheme.p?.copyWith(
+            style: theme.textTheme.p.copyWith(
               color: colorScheme.foreground,
             ),
             maxLines: 4,
@@ -290,7 +290,7 @@ class ProfileHeader extends StatelessWidget {
         Flexible(
           child: Text(
             text,
-            style: theme.textTheme.small?.copyWith(
+            style: theme.textTheme.small.copyWith(
               color: isLink ? colorScheme.primary : colorScheme.foreground,
               decoration: isLink ? TextDecoration.underline : null,
             ),

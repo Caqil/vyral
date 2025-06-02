@@ -1,4 +1,4 @@
-import '../../domain/entities/user_entity.dart';
+import 'package:vyral/features/profile/domain/entities/user_entity.dart';
 
 class FollowersState {
   final List<UserEntity> followers;

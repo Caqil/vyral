@@ -157,7 +157,7 @@ class ProfilePostsList extends StatelessWidget {
                     if (authorName != null)
                       Text(
                         authorName!,
-                        style: theme.textTheme.p?.copyWith(
+                        style: theme.textTheme.p.copyWith(
                           fontWeight: FontWeight.w600,
                           color: colorScheme.foreground,
                         ),
@@ -166,7 +166,7 @@ class ProfilePostsList extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         '@$authorUsername',
-                        style: theme.textTheme.small?.copyWith(
+                        style: theme.textTheme.small.copyWith(
                           color: colorScheme.mutedForeground,
                         ),
                       ),
@@ -205,7 +205,7 @@ class ProfilePostsList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Text(
         post.content,
-        style: theme.textTheme.p?.copyWith(
+        style: theme.textTheme.p.copyWith(
           color: colorScheme.foreground,
           height: 1.5,
         ),
@@ -448,7 +448,7 @@ class ProfilePostsList extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             post.location!,
-            style: theme.textTheme.small?.copyWith(
+            style: theme.textTheme.small.copyWith(
               color: colorScheme.mutedForeground,
             ),
           ),
@@ -471,7 +471,7 @@ class ProfilePostsList extends StatelessWidget {
             },
             child: Text(
               '#$hashtag',
-              style: theme.textTheme.small?.copyWith(
+              style: theme.textTheme.small.copyWith(
                 color: colorScheme.primary,
                 fontWeight: FontWeight.w500,
               ),
@@ -503,7 +503,7 @@ class ProfilePostsList extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               '${post.likesCount}',
-              style: theme.textTheme.small?.copyWith(
+              style: theme.textTheme.small.copyWith(
                 color: colorScheme.foreground,
               ),
             ),
@@ -524,7 +524,7 @@ class ProfilePostsList extends StatelessWidget {
           if (post.commentsCount > 0) ...[
             Text(
               '${post.commentsCount} comments',
-              style: theme.textTheme.small?.copyWith(
+              style: theme.textTheme.small.copyWith(
                 color: colorScheme.mutedForeground,
               ),
             ),
@@ -544,7 +544,7 @@ class ProfilePostsList extends StatelessWidget {
           if (post.sharesCount > 0) ...[
             Text(
               '${post.sharesCount} shares',
-              style: theme.textTheme.small?.copyWith(
+              style: theme.textTheme.small.copyWith(
                 color: colorScheme.mutedForeground,
               ),
             ),
@@ -553,7 +553,7 @@ class ProfilePostsList extends StatelessWidget {
           if (post.viewsCount > 0)
             Text(
               '${post.viewsCount} views',
-              style: theme.textTheme.small?.copyWith(
+              style: theme.textTheme.small.copyWith(
                 color: colorScheme.mutedForeground,
               ),
             ),
@@ -590,7 +590,7 @@ class ProfilePostsList extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       '${post.likesCount}',
-                      style: theme.textTheme.small?.copyWith(
+                      style: theme.textTheme.small.copyWith(
                         color: post.isLiked
                             ? Colors.red
                             : colorScheme.mutedForeground,
@@ -618,7 +618,7 @@ class ProfilePostsList extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       '${post.commentsCount}',
-                      style: theme.textTheme.small?.copyWith(
+                      style: theme.textTheme.small.copyWith(
                         color: colorScheme.mutedForeground,
                       ),
                     ),
@@ -644,7 +644,7 @@ class ProfilePostsList extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       '${post.sharesCount}',
-                      style: theme.textTheme.small?.copyWith(
+                      style: theme.textTheme.small.copyWith(
                         color: colorScheme.mutedForeground,
                       ),
                     ),

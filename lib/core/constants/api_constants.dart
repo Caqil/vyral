@@ -6,11 +6,11 @@ class ApiConstants {
   // Base URL - Update this to your actual server URL
   // For local development:
   static const String _developmentBaseUrl =
-      'https://4c35-2001-448a-10b0-5eb1-ccb2-2a40-354c-7fa5.ngrok-free.app/api/v1';
+      'https://40a7-2001-448a-10b0-5eb1-b901-fe9f-7d5f-ffd8.ngrok-free.app/api/v1';
   static const String _stagingBaseUrl =
       'https://staging-api.yourapp.com/api/v1';
   static const String _productionBaseUrl =
-      'https://4c35-2001-448a-10b0-5eb1-ccb2-2a40-354c-7fa5.ngrok-free.app/api/v1';
+      'https://40a7-2001-448a-10b0-5eb1-b901-fe9f-7d5f-ffd8.ngrok-free.app/api/v1';
   static String get baseUrl {
     if (kDebugMode) {
       return _developmentBaseUrl;
