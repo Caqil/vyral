@@ -53,6 +53,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       isLoading: true,
       errorMessage: null,
       hasError: false,
+      followStatus: null, // Reset follow status
+      isFollowLoading: false,
     ));
 
     try {
@@ -77,21 +79,27 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           AppLogger.debug(
               '✅ Profile loaded: ${user.username} (private: ${user.isPrivate})');
 
+          // Update state with user info immediately
           emit(state.copyWith(
             user: user,
             isOwnProfile: isOwnProfile,
+            isLoading: false, // Profile loaded, but still loading follow status
           ));
 
-          // Step 2: For other users, ALWAYS load follow status first (Instagram behavior)
+          // Step 2: For other users, IMMEDIATELY load follow status (Instagram/X behavior)
           if (!isOwnProfile &&
               currentUserId != null &&
               currentUserId.isNotEmpty) {
             AppLogger.debug(
-                '🔍 Loading follow status for Instagram-like behavior...');
-            await _loadFollowStatusWithFallback(user.id, emit);
+                '🔍 Loading follow status for Instagram/X-like behavior...');
+
+            // Show loading state for follow button
+            emit(state.copyWith(isFollowLoading: true));
+
+            await _loadFollowStatusWithImmediate(user.id, emit);
           }
 
-          // Step 3: Determine what content can be viewed
+          // Step 3: Determine what content can be viewed based on follow status
           final canViewContent =
               _determineContentVisibility(user, isOwnProfile);
           AppLogger.debug('👁️ Can view content: $canViewContent');
@@ -102,7 +110,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           }
 
           emit(state.copyWith(
-            isLoading: false,
             canViewContent: canViewContent,
           ));
         },
@@ -113,6 +120,79 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         isLoading: false,
         hasError: true,
         errorMessage: 'An unexpected error occurred: $e',
+      ));
+    }
+  }
+
+  /// NEW METHOD: Load follow status immediately and handle all scenarios
+  Future<void> _loadFollowStatusWithImmediate(
+      String userId, Emitter<ProfileState> emit) async {
+    try {
+      AppLogger.debug('🔄 Fetching follow status from API...');
+
+      final result = await getFollowStatus(userId);
+
+      result.fold(
+        (failure) {
+          AppLogger.debug(
+              '⚠️ Failed to load follow status: ${failure.message}');
+
+          // Handle different failure types
+          if (failure.message.contains('404') ||
+              failure.message.contains('not found')) {
+            // User relationship doesn't exist yet - they are not following
+            final defaultFollowStatus = FollowStatusEntity(
+              userId: getCurrentUserId() ?? '',
+              targetUserId: userId,
+              isFollowing: false,
+              isFollowedBy: false,
+              isPending: false,
+              isBlocked: false,
+              isMuted: false,
+            );
+
+            AppLogger.debug(
+                '✅ No relationship exists - defaulting to not following');
+            emit(state.copyWith(
+              followStatus: defaultFollowStatus,
+              isFollowLoading: false,
+            ));
+          } else {
+            // Other errors - still stop loading but don't set follow status
+            AppLogger.debug('❌ Follow status API error: ${failure.message}');
+            emit(state.copyWith(
+              isFollowLoading: false,
+              hasError: false, // Don't show error for follow status failure
+            ));
+          }
+        },
+        (followStatus) {
+          AppLogger.debug(
+              '✅ Follow status loaded from API: Following=${followStatus.isFollowing}, Pending=${followStatus.isPending}, Blocked=${followStatus.isBlocked}');
+
+          emit(state.copyWith(
+            followStatus: followStatus,
+            isFollowLoading: false,
+          ));
+        },
+      );
+    } catch (e) {
+      AppLogger.debug('💥 Exception loading follow status: $e');
+
+      // Create default "not following" status for exceptions
+      final defaultFollowStatus = FollowStatusEntity(
+        userId: getCurrentUserId() ?? '',
+        targetUserId: userId,
+        isFollowing: false,
+        isFollowedBy: false,
+        isPending: false,
+        isBlocked: false,
+        isMuted: false,
+      );
+
+      emit(state.copyWith(
+        followStatus: defaultFollowStatus,
+        isFollowLoading: false,
       ));
     }
   }
@@ -150,31 +230,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     // Public profile: always visible
     if (!user.isPrivate) return true;
 
-    // Private profile: only if following
+    // Private profile: only if following (check current follow status)
     return state.followStatus?.isFollowing == true;
-  }
-
-  Future<void> _loadFollowStatusWithFallback(
-      String userId, Emitter<ProfileState> emit) async {
-    try {
-      final result = await getFollowStatus(userId);
-      result.fold(
-        (failure) {
-          AppLogger.debug(
-              '⚠️ Failed to load follow status: ${failure.message}');
-          // Don't emit error for follow status failure, just log it
-          // The button will show default state based on profile privacy
-        },
-        (followStatus) {
-          AppLogger.debug(
-              '✅ Follow status loaded: Following=${followStatus.isFollowing}, Pending=${followStatus.isPending}');
-          emit(state.copyWith(followStatus: followStatus));
-        },
-      );
-    } catch (e) {
-      AppLogger.debug('💥 Exception loading follow status: $e');
-      // Silent failure - button will show default state
-    }
   }
 
   Future<void> _loadProfileData(
@@ -210,9 +267,11 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         (user) async {
           emit(state.copyWith(user: user));
 
-          // Refresh follow status for other users
+          // Refresh follow status for other users (CRITICAL: Always reload relationship)
           if (!state.isOwnProfile) {
-            await _loadFollowStatusWithFallback(state.user!.id, emit);
+            AppLogger.debug('🔄 Refreshing follow status...');
+            emit(state.copyWith(isFollowLoading: true));
+            await _loadFollowStatusWithImmediate(state.user!.id, emit);
           }
 
           // Refresh content if accessible
@@ -270,7 +329,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           await _handleFollowFailure(failure, event.userId, emit);
         },
         (actualFollowStatus) async {
-          AppLogger.debug('✅ Follow successful');
+          AppLogger.debug('✅ Follow successful - syncing with server state');
           await _handleFollowSuccess(actualFollowStatus, emit);
         },
       );
@@ -314,7 +373,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           await _handleUnfollowFailure(failure, event.userId, emit);
         },
         (actualFollowStatus) async {
-          AppLogger.debug('✅ Unfollow successful');
+          AppLogger.debug('✅ Unfollow successful - syncing with server state');
           await _handleUnfollowSuccess(actualFollowStatus, emit);
         },
       );
@@ -355,20 +414,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
   Future<void> _handleFollowFailure(
       dynamic failure, String userId, Emitter<ProfileState> emit) async {
-    if (failure is AlreadyFollowingFailure) {
-      // User is already following - sync with server state
-      AppLogger.debug('👍 Already following - syncing state');
-      final correctFollowStatus =
-          _createOptimisticFollowStatus(userId, isFollowing: true);
-
-      if (!emit.isDone) {
-        emit(state.copyWith(
-          isFollowLoading: false,
-          followStatus: correctFollowStatus,
-          hasError: false,
-          errorMessage: null,
-        ));
-      }
+    if (failure.message.contains('409') ||
+        failure.message.toLowerCase().contains('already following')) {
+      // User is already following - sync with server state by reloading follow status
+      AppLogger.debug(
+          '👍 Already following - reloading actual status from server');
+      await _loadFollowStatusWithImmediate(userId, emit);
     } else {
       // Rollback optimistic update
       await _rollbackFollowOperation(userId, emit, failure.message);
@@ -377,20 +428,11 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
   Future<void> _handleUnfollowFailure(
       dynamic failure, String userId, Emitter<ProfileState> emit) async {
-    if (failure is NotFollowingFailure) {
-      // User is not following - sync with server state
-      AppLogger.debug('👎 Not following - syncing state');
-      final correctFollowStatus =
-          _createOptimisticFollowStatus(userId, isFollowing: false);
-
-      if (!emit.isDone) {
-        emit(state.copyWith(
-          isFollowLoading: false,
-          followStatus: correctFollowStatus,
-          hasError: false,
-          errorMessage: null,
-        ));
-      }
+    if (failure.message.contains('404') ||
+        failure.message.toLowerCase().contains('not following')) {
+      // User is not following - sync with server state by reloading follow status
+      AppLogger.debug('👎 Not following - reloading actual status from server');
+      await _loadFollowStatusWithImmediate(userId, emit);
     } else {
       // Rollback optimistic update
       await _rollbackUnfollowOperation(userId, emit, failure.message);
@@ -399,6 +441,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
   Future<void> _handleFollowSuccess(
       FollowStatusEntity actualStatus, Emitter<ProfileState> emit) async {
+    // Use the actual server response instead of optimistic update
     final actualUser = state.user?.copyWith(
       followersCount: actualStatus.isFollowing && !actualStatus.isPending
           ? state.user!.followersCount
@@ -408,7 +451,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     if (!emit.isDone) {
       emit(state.copyWith(
         isFollowLoading: false,
-        followStatus: actualStatus,
+        followStatus: actualStatus, // Use server response
         user: actualUser,
         hasError: false,
         errorMessage: null,
@@ -421,7 +464,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     if (!emit.isDone) {
       emit(state.copyWith(
         isFollowLoading: false,
-        followStatus: actualStatus,
+        followStatus: actualStatus, // Use server response
         hasError: false,
         errorMessage: null,
       ));
@@ -432,18 +475,10 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       dynamic e, String userId, Emitter<ProfileState> emit) async {
     if (e.toString().contains('409') ||
         e.toString().toLowerCase().contains('already following')) {
-      // Handle "already following" from exception
-      final correctFollowStatus =
-          _createOptimisticFollowStatus(userId, isFollowing: true);
-
-      if (!emit.isDone) {
-        emit(state.copyWith(
-          isFollowLoading: false,
-          followStatus: correctFollowStatus,
-          hasError: false,
-          errorMessage: null,
-        ));
-      }
+      // Handle "already following" from exception - reload from server
+      AppLogger.debug(
+          '👍 Already following (from exception) - reloading from server');
+      await _loadFollowStatusWithImmediate(userId, emit);
     } else {
       await _rollbackFollowOperation(userId, emit, 'Network error occurred');
     }
@@ -454,18 +489,10 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     if (e.toString().contains('409') ||
         e.toString().contains('404') ||
         e.toString().toLowerCase().contains('not following')) {
-      // Handle "not following" from exception
-      final correctFollowStatus =
-          _createOptimisticFollowStatus(userId, isFollowing: false);
-
-      if (!emit.isDone) {
-        emit(state.copyWith(
-          isFollowLoading: false,
-          followStatus: correctFollowStatus,
-          hasError: false,
-          errorMessage: null,
-        ));
-      }
+      // Handle "not following" from exception - reload from server
+      AppLogger.debug(
+          '👎 Not following (from exception) - reloading from server');
+      await _loadFollowStatusWithImmediate(userId, emit);
     } else {
       await _rollbackUnfollowOperation(userId, emit, 'Network error occurred');
     }
@@ -481,7 +508,15 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           isPending: false,
           updatedAt: DateTime.now(),
         ) ??
-        _createOptimisticFollowStatus(userId, isFollowing: false);
+        FollowStatusEntity(
+          userId: getCurrentUserId() ?? '',
+          targetUserId: userId,
+          isFollowing: false,
+          isFollowedBy: false,
+          isPending: false,
+          isBlocked: false,
+          isMuted: false,
+        );
 
     final restoredUser =
         _updateFollowerCountOptimistically(-1); // Undo the optimistic increment
@@ -510,7 +545,15 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           isPending: false,
           updatedAt: DateTime.now(),
         ) ??
-        _createOptimisticFollowStatus(userId, isFollowing: true);
+        FollowStatusEntity(
+          userId: getCurrentUserId() ?? '',
+          targetUserId: userId,
+          isFollowing: true,
+          isFollowedBy: false,
+          isPending: false,
+          isBlocked: false,
+          isMuted: false,
+        );
 
     final restoredUser =
         _updateFollowerCountOptimistically(1); // Undo the optimistic decrement

@@ -18,7 +18,8 @@ class ProfileState {
   final bool isRefreshing;
   final bool isLoadingPosts;
   final bool isLoadingMedia;
-  final bool isFollowLoading; // Add this field
+  final bool isFollowLoading;
+  final bool isFollowStatusLoading; // NEW: Track follow status loading
   final bool hasError;
   final String? errorMessage;
   final ProfileErrorType? errorType;
@@ -40,7 +41,8 @@ class ProfileState {
     this.isRefreshing = false,
     this.isLoadingPosts = false,
     this.isLoadingMedia = false,
-    this.isFollowLoading = false, // Add this field
+    this.isFollowLoading = false,
+    this.isFollowStatusLoading = false, // NEW
     this.hasError = false,
     this.errorMessage,
     this.errorType,
@@ -63,7 +65,8 @@ class ProfileState {
     bool? isRefreshing,
     bool? isLoadingPosts,
     bool? isLoadingMedia,
-    bool? isFollowLoading, // Add this field
+    bool? isFollowLoading,
+    bool? isFollowStatusLoading, // NEW
     bool? hasError,
     String? errorMessage,
     ProfileErrorType? errorType,
@@ -85,8 +88,9 @@ class ProfileState {
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isLoadingPosts: isLoadingPosts ?? this.isLoadingPosts,
       isLoadingMedia: isLoadingMedia ?? this.isLoadingMedia,
-      isFollowLoading:
-          isFollowLoading ?? this.isFollowLoading, // Add this field
+      isFollowLoading: isFollowLoading ?? this.isFollowLoading,
+      isFollowStatusLoading:
+          isFollowStatusLoading ?? this.isFollowStatusLoading, // NEW
       hasError: hasError ?? this.hasError,
       errorMessage: errorMessage,
       errorType: errorType ?? this.errorType,
@@ -140,4 +144,8 @@ class ProfileState {
       return user?.isPrivate == true ? 'Request' : 'Follow';
     }
   }
+
+  // NEW: Check if follow status has been determined
+  bool get isFollowStatusDetermined =>
+      isOwnProfile || (!isFollowStatusLoading && followStatus != null);
 }

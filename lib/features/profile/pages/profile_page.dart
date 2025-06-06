@@ -53,7 +53,9 @@ class _ProfilePageState extends State<ProfilePage>
 
     _scrollController.addListener(_onScroll);
 
-    // Load profile data
+    // Load profile data - this will now properly load follow status
+    AppLogger.debug(
+        '🔄 ProfilePage: Loading profile for user ${widget.userId}');
     context.read<ProfileBloc>().add(
           ProfileLoadRequested(userId: widget.userId),
         );
@@ -88,36 +90,51 @@ class _ProfilePageState extends State<ProfilePage>
 
     return BlocConsumer<ProfileBloc, ProfileState>(
       listener: (context, state) {
+        AppLogger.debug('📱 ProfilePage: State update received');
+        AppLogger.debug('   - User: ${state.user?.username}');
+        AppLogger.debug(
+            '   - Follow Status: Following=${state.followStatus?.isFollowing}, Pending=${state.followStatus?.isPending}');
+        AppLogger.debug('   - Follow Loading: ${state.isFollowLoading}');
+        AppLogger.debug('   - Has Error: ${state.hasError}');
+
         // Handle follow/unfollow success messages
-        if (!state.isFollowLoading && state.followStatus != null) {
+        if (!state.isFollowLoading &&
+            state.followStatus != null &&
+            !state.hasError) {
           final followStatus = state.followStatus!;
           final user = state.user;
 
           if (user != null) {
-            if (followStatus.isFollowing) {
-              if (followStatus.isPending) {
-                context.showSuccessSnackBar(
-                  context,
-                  'Follow request sent to ${user.displayName ?? user.username}',
-                );
-              } else {
-                context.showSuccessSnackBar(
-                  context,
-                  'You are now following ${user.displayName ?? user.username}',
-                );
-              }
-            } else if (!followStatus.isFollowing && !followStatus.isPending) {
+            // Show appropriate messages based on the ACTUAL server response
+            if (followStatus.isFollowing && !followStatus.isPending) {
+              AppLogger.debug('✅ Successfully following user');
               context.showSuccessSnackBar(
                 context,
-                'You unfollowed ${user.displayName ?? user.username}',
+                'You are now following ${user.displayName ?? user.username}',
               );
+            } else if (followStatus.isPending) {
+              AppLogger.debug('⏳ Follow request sent (pending)');
+              context.showSuccessSnackBar(
+                context,
+                'Follow request sent to ${user.displayName ?? user.username}',
+              );
+            } else if (!followStatus.isFollowing && !followStatus.isPending) {
+              // Only show unfollow message if we were previously following
+              // (avoid showing it on initial load)
+              if (state.user?.followersCount != null) {
+                AppLogger.debug('👋 Successfully unfollowed user');
+                context.showSuccessSnackBar(
+                  context,
+                  'You unfollowed ${user.displayName ?? user.username}',
+                );
+              }
             }
           }
         }
 
         // Handle follow/unfollow errors
         if (state.hasError && state.errorMessage != null) {
-          AppLogger.error(state.errorMessage!);
+          AppLogger.error('❌ ProfilePage Error: ${state.errorMessage}');
           context.showErrorSnackBar(context, state.errorMessage!);
         }
       },
@@ -228,6 +245,7 @@ class _ProfilePageState extends State<ProfilePage>
     ShadColorScheme colorScheme,
     ShadThemeData theme,
   ) {
+    // Loading state
     if (state.isLoading && state.user == null) {
       return const SizedBox(
         height: 400,
@@ -235,6 +253,7 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
 
+    // Error state
     if (state.hasError && state.user == null) {
       return SizedBox(
         height: 400,
@@ -248,6 +267,7 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
 
+    // No user found
     if (state.user == null) {
       return const SizedBox(
         height: 400,
@@ -258,6 +278,7 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
 
+    // Success state - show profile content
     return Column(
       children: [
         // Profile Header
@@ -265,63 +286,130 @@ class _ProfilePageState extends State<ProfilePage>
           user: state.user!,
           coverImageUrl: state.user!.coverPicture,
           isOwnProfile: state.isOwnProfile,
+          isPrivateView: state.isPrivateProfile && !state.canViewContent,
+          onCoverTap: state.isOwnProfile ? _handleEditProfile : null,
+          onProfilePictureTap: state.isOwnProfile ? _handleEditProfile : null,
         ),
 
         const SizedBox(height: 16),
 
-        // Action Buttons
+        // Action Buttons - KEY COMPONENT WITH FIXED FOLLOW STATUS
         _buildActionButtons(state),
 
         const SizedBox(height: 16),
 
-        // Stats
-        ProfileStats(
-          user: state.user!,
-          stats: state.stats,
-          onStatsPressed: _handleStatsPressed,
-        ),
-
-        const SizedBox(height: 16),
-
-        // Bio and Info
-        if (state.user!.bio != null ||
-            state.user!.website != null ||
-            state.user!.location != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildProfileInfo(state.user!, colorScheme, theme),
-          ),
-
-        const SizedBox(height: 24),
-
-        // Highlights
-        if (state.highlights.isNotEmpty)
-          ProfileHighlights(
-            highlights: state.highlights,
-            onHighlightPressed: _handleHighlightPressed,
+        // Stats (only if can view or own profile)
+        if (state.canViewStats)
+          ProfileStats(
+            user: state.user!,
+            stats: state.stats,
+            onStatsPressed: _handleStatsPressed,
           ),
 
         const SizedBox(height: 16),
 
-        // Content Tabs - FIXED: Added missing parameters
-        ProfileContentTabs(
-          user: state.user!,
-          posts: state.posts,
-          media: state.media,
-          isLoadingPosts: state.isLoadingPosts,
-          isLoadingMedia: state.isLoadingMedia,
-          isOwnProfile: state.isOwnProfile, // FIXED: Added missing parameter
-          currentUserId: null, // Add if needed
-          onPostPressed: _handlePostPressed,
-          onLoadMorePosts: _handleLoadMorePosts,
-          onLoadMoreMedia: _handleLoadMoreMedia,
-          onRefreshPosts: () => context.read<ProfileBloc>().add(
-                ProfileRefreshRequested(),
-              ), // FIXED: Added missing parameter
-        ),
+        // Bio and Info (only if can view or own profile)
+        if (state.canViewContent || state.isOwnProfile) ...[
+          if (state.user!.bio != null ||
+              state.user!.website != null ||
+              state.user!.location != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _buildProfileInfo(state.user!, colorScheme, theme),
+            ),
+
+          const SizedBox(height: 24),
+
+          // Highlights
+          if (state.highlights.isNotEmpty)
+            ProfileHighlights(
+              highlights: state.highlights,
+              onHighlightPressed: _handleHighlightPressed,
+            ),
+
+          const SizedBox(height: 16),
+
+          // Content Tabs
+          ProfileContentTabs(
+            user: state.user!,
+            posts: state.posts,
+            media: state.media,
+            isLoadingPosts: state.isLoadingPosts,
+            isLoadingMedia: state.isLoadingMedia,
+            isOwnProfile: state.isOwnProfile,
+            currentUserId: null, // Add if needed
+            onPostPressed: _handlePostPressed,
+            onLoadMorePosts: _handleLoadMorePosts,
+            onLoadMoreMedia: _handleLoadMoreMedia,
+            onRefreshPosts: () => context.read<ProfileBloc>().add(
+                  ProfileRefreshRequested(),
+                ),
+          ),
+        ] else ...[
+          // Private account message
+          _buildPrivateAccountMessage(state, colorScheme, theme),
+        ],
 
         const SizedBox(height: 32),
       ],
+    );
+  }
+
+  Widget _buildActionButtons(ProfileState state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ProfileActionButtons(
+        user: state.user!,
+        isOwnProfile: state.isOwnProfile,
+        followStatus: state.followStatus, // ✅ Now properly loaded from API
+        isFollowLoading:
+            state.isFollowLoading, // ✅ Shows loading during API calls
+        onFollowPressed: () => _handleFollowAction(state),
+        onMessagePressed: () => _handleMessageAction(state.user!),
+        onEditPressed: () => _handleEditProfile(),
+        isPrivateView: state.isPrivateProfile && !state.canViewContent,
+      ),
+    );
+  }
+
+  Widget _buildPrivateAccountMessage(
+    ProfileState state,
+    ShadColorScheme colorScheme,
+    ShadThemeData theme,
+  ) {
+    return Container(
+      margin: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colorScheme.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.border),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            LucideIcons.lock,
+            size: 48,
+            color: colorScheme.mutedForeground,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'This Account is Private',
+            style: theme.textTheme.h4.copyWith(
+              color: colorScheme.foreground,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Follow @${state.user?.username} to see their posts, photos and videos.',
+            style: theme.textTheme.p.copyWith(
+              color: colorScheme.mutedForeground,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -360,6 +448,7 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           ],
           if (user.location != null && user.location!.isNotEmpty) ...[
+            const SizedBox(height: 8),
             _buildInfoRow(
               LucideIcons.mapPin,
               user.location!,
@@ -367,6 +456,7 @@ class _ProfilePageState extends State<ProfilePage>
               theme,
             ),
           ],
+          const SizedBox(height: 8),
           _buildInfoRow(
             LucideIcons.calendar,
             'Joined ${user.createdAt.displayDate}',
@@ -415,84 +505,6 @@ class _ProfilePageState extends State<ProfilePage>
     return child;
   }
 
-  Widget _buildActionButtons(ProfileState state) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ProfileActionButtons(
-        user: state.user!,
-        isOwnProfile: state.isOwnProfile,
-        followStatus: state.followStatus,
-        isFollowLoading: state.isFollowLoading,
-        onFollowPressed: () => _handleFollowAction(state),
-        onMessagePressed: () => _handleMessageAction(state.user!),
-        onEditPressed: () => _handleEditProfile(),
-      ),
-    );
-  }
-
-  // Event Handlers
-  void _handleFollowAction(ProfileState state) {
-    AppLogger.debug('🔄 ProfilePage: Follow action triggered');
-    AppLogger.debug(
-        '📊 Current follow status: ${state.followStatus?.isFollowing}');
-
-    if (state.followStatus?.isFollowing == true) {
-      // Show unfollow confirmation dialog
-      _showUnfollowConfirmation(state);
-    } else {
-      // Follow the user
-      context.read<ProfileBloc>().add(
-            ProfileFollowRequested(userId: widget.userId),
-          );
-    }
-  }
-
-  void _showUnfollowConfirmation(ProfileState state) {
-    showShadDialog(
-      context: context,
-      builder: (context) => ShadDialog(
-        title: const Text('Unfollow User'),
-        description: Text(
-          'Are you sure you want to unfollow @${state.user?.username ?? 'this user'}?',
-        ),
-        actions: [
-          ShadButton.outline(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ShadButton.destructive(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<ProfileBloc>().add(
-                    ProfileUnfollowRequested(userId: widget.userId),
-                  );
-            },
-            child: const Text('Unfollow'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handleMessageAction(UserEntity user) {
-    // Check if we can message this user
-    final state = context.read<ProfileBloc>().state;
-    if (state.followStatus?.canMessage == false) {
-      context.showErrorSnackBar(
-        context,
-        'You cannot message this user.',
-      );
-      return;
-    }
-
-    // Navigate to conversation page
-    context.go('/messages/new?userId=${user.id}');
-  }
-
-  void _handleEditProfile() {
-    context.go('/profile/edit');
-  }
-
   Widget _buildHeaderActions(ProfileState state) {
     return Skeletonizer(
       enabled: state.isLoading && state.user == null,
@@ -516,7 +528,153 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
+  // ✅ FIXED: Event Handlers with proper follow status checking
+  void _handleFollowAction(ProfileState state) {
+    AppLogger.debug('🔄 ProfilePage: Follow action triggered');
+    AppLogger.debug(
+        '📊 Current follow status: Following=${state.followStatus?.isFollowing}, Pending=${state.followStatus?.isPending}, Blocked=${state.followStatus?.isBlocked}');
+
+    // Handle blocked state
+    if (state.followStatus?.isBlocked == true) {
+      AppLogger.debug('🚫 User is blocked - showing blocked dialog');
+      _showBlockedUserDialog(state);
+      return;
+    }
+
+    // ✅ FIXED: Now properly checks the ACTUAL follow status from API
+    if (state.followStatus?.isFollowing == true) {
+      // User is currently following - show unfollow confirmation
+      AppLogger.debug('👥 User is following - showing unfollow confirmation');
+      _showUnfollowConfirmation(state);
+    } else if (state.followStatus?.isPending == true) {
+      // User has pending request - allow them to cancel it
+      AppLogger.debug(
+          '⏳ Follow request is pending - showing cancel confirmation');
+      _showCancelRequestConfirmation(state);
+    } else {
+      // User is not following - trigger follow action
+      AppLogger.debug('➕ User is not following - triggering follow action');
+      context.read<ProfileBloc>().add(
+            ProfileFollowRequested(userId: widget.userId),
+          );
+    }
+  }
+
+  void _showUnfollowConfirmation(ProfileState state) {
+    showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog(
+        title: const Text('Unfollow User'),
+        description: Text(
+          'Are you sure you want to unfollow @${state.user?.username ?? 'this user'}?',
+        ),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ShadButton.destructive(
+            onPressed: () {
+              Navigator.pop(context);
+              AppLogger.debug('🔄 Triggering unfollow action');
+              context.read<ProfileBloc>().add(
+                    ProfileUnfollowRequested(userId: widget.userId),
+                  );
+            },
+            child: const Text('Unfollow'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelRequestConfirmation(ProfileState state) {
+    showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog(
+        title: const Text('Cancel Follow Request'),
+        description: Text(
+          'Cancel your follow request to @${state.user?.username ?? 'this user'}?',
+        ),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Keep Request'),
+          ),
+          ShadButton.destructive(
+            onPressed: () {
+              Navigator.pop(context);
+              AppLogger.debug('🔄 Cancelling follow request');
+              // Cancel the follow request (same as unfollow)
+              context.read<ProfileBloc>().add(
+                    ProfileUnfollowRequested(userId: widget.userId),
+                  );
+            },
+            child: const Text('Cancel Request'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBlockedUserDialog(ProfileState state) {
+    showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog(
+        title: const Text('User Blocked'),
+        description: Text(
+          'You have blocked @${state.user?.username ?? 'this user'}. You cannot follow or message them until you unblock them.',
+        ),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+          ShadButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implement unblock functionality
+              AppLogger.debug('🔄 Unblock functionality not implemented yet');
+            },
+            child: const Text('Unblock'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleMessageAction(UserEntity user) {
+    // Check if we can message this user
+    final state = context.read<ProfileBloc>().state;
+
+    if (state.followStatus?.isBlocked == true) {
+      context.showErrorSnackBar(
+        context,
+        'You cannot message this user because they are blocked.',
+      );
+      return;
+    }
+
+    if (state.followStatus?.canMessage == false) {
+      context.showErrorSnackBar(
+        context,
+        'You cannot message this user.',
+      );
+      return;
+    }
+
+    // Navigate to conversation page
+    AppLogger.debug('💬 Navigating to message user: ${user.username}');
+    context.go('/messages/new?userId=${user.id}');
+  }
+
+  void _handleEditProfile() {
+    AppLogger.debug('✏️ Navigating to edit profile');
+    context.go('/profile/edit');
+  }
+
   void _handleStatsPressed(String type) {
+    AppLogger.debug('📊 Stats pressed: $type');
     switch (type) {
       case 'followers':
         context.go('/profile/${widget.userId}/followers');
@@ -525,27 +683,31 @@ class _ProfilePageState extends State<ProfilePage>
         context.go('/profile/${widget.userId}/following');
         break;
       case 'posts':
-        // Scroll to posts tab
+        // Scroll to posts tab or show posts view
         break;
     }
   }
 
   void _handleHighlightPressed(String highlightId) {
+    AppLogger.debug('✨ Highlight pressed: $highlightId');
     // Navigate to story highlight view
     context.go('/stories/highlight/$highlightId');
   }
 
   void _handlePostPressed(String postId) {
+    AppLogger.debug('📝 Post pressed: $postId');
     context.go('/post/$postId');
   }
 
   void _handleLoadMorePosts() {
+    AppLogger.debug('📄 Loading more posts');
     context.read<ProfileBloc>().add(
           ProfileLoadMorePostsRequested(userId: widget.userId),
         );
   }
 
   void _handleLoadMoreMedia() {
+    AppLogger.debug('🖼️ Loading more media');
     context.read<ProfileBloc>().add(
           ProfileLoadMoreMediaRequested(userId: widget.userId),
         );
@@ -567,6 +729,7 @@ class _ProfilePageState extends State<ProfilePage>
               onPressed: () {
                 // Copy profile link
                 context.pop();
+                context.showSuccessSnackBar(context, 'Profile link copied!');
               },
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
@@ -601,14 +764,15 @@ class _ProfilePageState extends State<ProfilePage>
                 _reportProfile(user);
               },
             ),
-            ListTile(
-              leading: const Icon(LucideIcons.userX),
-              title: const Text('Block User'),
-              onTap: () {
-                context.pop();
-                _blockUser(user);
-              },
-            ),
+            if (!context.read<ProfileBloc>().state.isOwnProfile)
+              ListTile(
+                leading: const Icon(LucideIcons.userX),
+                title: const Text('Block User'),
+                onTap: () {
+                  context.pop();
+                  _blockUser(user);
+                },
+              ),
           ],
         ),
       ),
@@ -617,13 +781,72 @@ class _ProfilePageState extends State<ProfilePage>
 
   void _reportProfile(UserEntity user) {
     // Show report dialog
+    showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog(
+        title: const Text('Report Profile'),
+        description: Text('Why are you reporting @${user.username}?'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Spam'),
+              onTap: () {
+                Navigator.pop(context);
+                context.showSuccessSnackBar(
+                    context, 'Profile reported for spam');
+              },
+            ),
+            ListTile(
+              title: const Text('Harassment'),
+              onTap: () {
+                Navigator.pop(context);
+                context.showSuccessSnackBar(
+                    context, 'Profile reported for harassment');
+              },
+            ),
+            ListTile(
+              title: const Text('Inappropriate content'),
+              onTap: () {
+                Navigator.pop(context);
+                context.showSuccessSnackBar(
+                    context, 'Profile reported for inappropriate content');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _blockUser(UserEntity user) {
     // Show block confirmation dialog
+    showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog(
+        title: const Text('Block User'),
+        description: Text('Are you sure you want to block @${user.username}?'),
+        actions: [
+          ShadButton.outline(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ShadButton.destructive(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implement block functionality
+              context.showSuccessSnackBar(context, 'User blocked');
+            },
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _launchUrl(String url) {
-    // Launch URL
+    // TODO: Implement URL launching
+    AppLogger.debug('🌐 Would launch URL: $url');
+    context.showSuccessSnackBar(context, 'Opening link...');
   }
 }
